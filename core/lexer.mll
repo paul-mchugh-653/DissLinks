@@ -121,6 +121,7 @@ let keywords = [
  "mu"       , MU;
  "mutual"   , MUTUAL;
  "nu"       , NU;
+ "nullable" , NULLABLE;
  "offer"    , OFFER;
  "on"       , ON;
  "orderby"  , ORDERBY;

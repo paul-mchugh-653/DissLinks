@@ -1,5 +1,5 @@
 var db = database "linkslearn";
 
-var people = table "people" with (name: ? String, age: Int) from db;
+var people = table "people" with (name: nullable String, age: Int) from db;
 
 people
