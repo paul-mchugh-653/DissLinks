@@ -1,0 +1,35 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+var db = database "linkslearn";
+var people = table "people" with (name: String, age: Int) from db;
+
+typename Model = (people : [(name: String, age: Int)], deletePerson: (String) {} ~> ());
+
+typename Message = [| NoOp | SubmitDelete: String |];
+
+sig updt : (Message, Model) {} ~> Model
+fun updt(msg, model) {
+	switch (msg) {
+		case NoOp -> model
+		case SubmitDelete(n) ->
+			delete (x <-- people) where (x.name ==n);
+			model
+	}
+}
+
+fun view(model) {
+	
+	open MvuHTML;
+    	open MvuAttrs;
+	
+	div(a0,
+		button( onClick(fun () { Delete("Luke" )} ), textNode("Hit Me")))
+
+}
+
+fun mainPage() {
+	Mvu.runCmd("placeholder", NoOp, view, updt, MvuCommands.empty)
+}

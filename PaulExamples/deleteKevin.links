@@ -1,0 +1,17 @@
+var db = database "linkslearn";
+
+var comedians = table "comedians" with (id: Int, firstname: String, lastname: String, salary: Float, hometown: String) from db;
+
+fun main(){
+
+	delete (c <-- comedians)
+	where (c.id == 13);
+
+	query{
+		for (c <-- comedians)
+		[c]
+	}
+
+} 
+
+main()

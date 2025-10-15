@@ -1,0 +1,112 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+typename Model = [| NotStarted | Waiting | InsertDone | DeleteDone | SelectDone: [(name: String, age: Int)] |];
+typename Message = [| Insert: (String, Int) | Delete: (String, Int) | Select | InsertFinished:() | DeleteFinished:() | SelectFinished:[(name: String, age: Int)] |];
+
+var db = database "linkslearn";
+var people = table "people" with (name: String, age: Int) from db;
+
+sig unpack : (String, [(name: String, age: Int)]) ~%~> String
+fun unpack(t, l){
+
+        if (l == [])
+                ""
+        else
+                hd(l).name ^^ " " ^^ intToString(hd(l).age) ^^ " | \n" ^^ unpack(t, tl(l))
+
+}
+
+
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)
+fun view(model) {
+	open MvuAttrs;
+	open MvuHTML;
+
+	var text = 
+	switch(model) {
+		case NotStarted -> "Not Started"
+		case Waiting -> "Waiting"
+		case InsertDone -> "Inserted"
+		case DeleteDone -> "Deleted"
+		case SelectDone(result) -> unpack("", result)
+	};
+
+
+	div(a0,
+		input(type("text"), MvuHTML.empty)
+	) +*
+	div(a0,
+                input(type("text"), MvuHTML.empty)
+        ) +*
+	div(a0,
+		button(onClick(fun () { Delete("Luke", 21) }), textNode("Delete"))
+	) +*
+	div(a0,
+		button(onClick(fun() { Insert("Luke", 21) }), textNode("Insert"))
+	) +*
+        div(a0,
+                button(onClick(fun() { Select }), textNode("Select"))
+        ) +*
+	div(a0,
+		textNode(text)
+	)
+
+}
+
+sig insertTry : (String, Int) ~%~> ()
+fun insertTry(n, a) server {
+	insert people values (name, age) [(name = n, age = a)]
+
+}
+
+sig deleteTry : (String, Int) ~%~> ()
+fun deleteTry(n, a) server {
+	delete (r <-- people) where (r.name == n && r.age == a)
+}
+
+fun selectTry() server {
+	query{
+		for (p <-- people)
+		where(p.age > 20)
+        		[p]
+	}
+}
+
+sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+	switch(msg) {
+		case Insert(n, a) -> 
+			var cmd = 
+				MvuCommands.spawnProc(fun () { InsertFinished(insertTry(n, a)) });
+		(Waiting, cmd)
+		case Delete(n, a) -> 
+			var cmd = 
+				MvuCommands.spawnProc(fun() { DeleteFinished(deleteTry(n, a)) });
+		(Waiting, cmd)
+		case Select ->
+			var cmd = 
+				MvuCommands.spawnProc(fun() { SelectFinished(selectTry()) });
+		(Waiting, cmd)
+		case InsertFinished -> (InsertDone, MvuCommands.empty)
+		case DeleteFinished -> (DeleteDone, MvuCommands.empty)
+		case SelectFinished(result) -> (SelectDone(result), MvuCommands.empty)
+	}
+}
+
+
+fun mainPage() {
+	Mvu.runCmd("placeholder", NotStarted, view, updt, MvuCommands.empty);
+
+	page
+	<html>
+	<body>
+	<div id="placeholder"></div>
+	</body>
+	</html>
+}
+
+serveThis(mainPage)

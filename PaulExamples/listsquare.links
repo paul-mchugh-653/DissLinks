@@ -1,0 +1,7 @@
+fun listsquare(){
+	var x = [1,2,3,4];
+	for (i <- x)
+		[i*i]
+}
+
+listsquare()

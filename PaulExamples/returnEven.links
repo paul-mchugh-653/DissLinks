@@ -1,0 +1,8 @@
+fun returnEvens(){
+	var nums = [28,31,41,12,90,99,567,0,-4,23];
+	for (x <- nums)
+	where (even(x))
+	[x]
+}
+
+returnEvens()

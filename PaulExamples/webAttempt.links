@@ -1,0 +1,22 @@
+
+fun webpage(_, clientLoc) {
+	
+	page
+	<html>
+	<head>Test Page</head>
+	<body>
+	<p>It works!</p>
+	</body>	
+	</html>
+
+}
+
+
+fun main() server {
+
+	addLocatedRouteHandler("/", webpage);
+	servePages()
+
+} 
+
+main()

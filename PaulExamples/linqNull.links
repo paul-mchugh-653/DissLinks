@@ -1,0 +1,24 @@
+var db = database "linkslearn";
+
+var comedians = table "comedians" with (id: Int, firstname: String, lastname: String, salary: Float, hometown: String) from db;
+
+
+fun main(){
+
+insert comedians values (id, firstname, lastname, salary, hometown) [(id = 13, firstname = "Kevin", lastname = "Bridges", salary = 80000.0, hometown = "Glasgow")]; 
+
+
+update (c <-- comedians)
+where (c.id == 3)
+set (salary = 0.0);
+
+
+query{
+	for (c <-- comedians)
+	where (c.hometown == "Glasgow")
+	[c]
+}
+
+}
+
+main()

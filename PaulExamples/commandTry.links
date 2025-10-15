@@ -1,0 +1,66 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+
+
+typename Model = [|NotGot| HasGot:String |];
+
+
+typename Message = [| GetThem | Got |];
+
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)
+fun view(model) {
+
+	open MvuAttrs;
+	open MvuHTML;
+
+	var text =
+		switch (model) {
+		case NotGot -> "Nothing... so far"
+		case HasGot(name) -> name
+		};
+
+	div (a0, 
+		button(onClick(fun() { GetThem }), textNode("Try this")) +* textNode(text)	
+	)
+
+	
+}
+
+
+fun gotThem(){
+
+	HasGot("John")
+
+}
+
+
+sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+
+	switch(msg) {
+		case GetThem -> (gotThem(), MvuCommands.empty)
+		case Got -> (model, MvuCommands.empty)
+	}
+	
+}
+
+
+fun mainPage() {
+
+	Mvu.runCmd("placeholder", NotGot, view, updt, MvuCommands.empty);
+
+	page
+	<html>
+	<body>
+	<div id="placeholder"></div>
+	</body>
+	</html>
+
+}
+
+
+serveThis(mainPage)

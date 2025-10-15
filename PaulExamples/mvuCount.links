@@ -1,0 +1,38 @@
+open import Mvu;
+open import MvuAttrs;
+open import MvuEvents;
+open import MvuHTML;
+
+var db = database "linkslearn";
+
+typename Model = (count: Int);
+typename Message = [| UpdateCount: Int |];
+
+fun updt(msg, model){
+	switch (msg) {
+		case UpdateCount(model) -> (model + 1)
+	}
+}
+
+var ae = MvuAttrs.empty;
+var he = MvuHTML.empty;
+
+fun view(model){
+	div(ae,
+		button (id ("increment") +@ onClick( fun() { UpdateCount(model) }), textNode("+1")) +*
+		textNode(intToString(model))
+	)
+}
+
+fun mainPage(){
+	runSimple("placeholder", 0, view, updt);
+	page
+	<html><body><div id="placeholder"></div></body></html>
+}
+
+fun main(){
+	addRoute("/", fun(_) { mainPage() });
+	servePages()
+}
+
+main()

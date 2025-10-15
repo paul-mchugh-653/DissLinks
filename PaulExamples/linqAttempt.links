@@ -1,0 +1,26 @@
+var db = database "linkslearn";
+
+var people = table "people" with (name: String, age: Int) from db;
+
+fun main(){
+
+insert people values (name, age) [(name = "Luke", age = 21)];
+
+update (r <-- people)
+where (r.name == "Luke")
+set (age = 22);
+
+delete (r <-- people)
+where (r.name == "Luke");
+
+query{
+for (p <-- people)
+where(p.age > 20)
+	[p]
+}
+
+
+}
+
+
+main()

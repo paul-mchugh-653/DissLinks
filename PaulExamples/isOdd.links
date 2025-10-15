@@ -1,0 +1,7 @@
+fun isOdd(n){
+
+	(mod(n,2)) == 1
+
+}
+
+isOdd(9)

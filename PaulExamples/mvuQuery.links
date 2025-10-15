@@ -1,0 +1,42 @@
+open import Mvu;
+open import MvuAttrs;
+open import MvuEvents;
+open import MvuHTML;
+
+var db = database "linksLearn";
+var people = table "people" with (name: String, age: Int) from db;
+
+typename Person = (name: String, age: Int);
+typename Model = [Person];
+typename Message = [| Fetch: [Person] |];
+
+fun updt(msg, model){
+	switch (msg) {
+		case Fetch(model) -> (model = query{
+			for (p <-- people)
+			where (p.age > 20)
+			[p]
+		})
+	}
+}
+
+var ae = MvuAttrs.empty;
+var he = MvuHTML.empty;
+
+fun view(model){
+	div(ae, model)
+}
+
+fun mainPage(){
+	runSimple("placeholder", [], view, updt);
+	page
+	<html><body><div id="placeholder"></div></body></html>
+}
+
+fun main(){
+	addRoute("/", fun(_) {mainPage() });
+	servePages()
+}
+
+
+main()

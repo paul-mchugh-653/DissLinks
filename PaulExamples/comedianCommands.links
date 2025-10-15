@@ -1,0 +1,127 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+typename Model = (id: Int, firstname: String, lastname: String, salary: Float, hometown: String, state: [|NotStarted| Waiting | InsertDone| DeleteDone | SelectDone: [(id: Int, firstname: String, lastname: String, salary: Float, hometown: String)] |]);
+
+typename Message = [| Insert: (String, String, Float, String) | Delete: Int | Select | InsertFinished:() | DeleteFinished:() | SelectFinished:[(id: Int, firstname: String, lastname: String, salary: Float, hometown: String)] | ID: Int | FirstName: String | LastName: String | Salary: Float| HomeTown: String |];
+
+var db = database "linkslearn";
+var comediansNoID = table "comedians" with (firstname: String, lastname: String, salary: Float, hometown: String) from db;
+var comedians = table "comedians" with (id: Int, firstname: String, lastname: String, salary: Float, hometown: String) from db;
+
+sig unpack : (String, [(id: Int, firstname: String, lastname: String, salary: Float, hometown: String)]) ~%~> String
+fun unpack(t, l){
+
+        if (l == [])
+                ""
+        else
+                intToString(hd(l).id) ^^ " " ^^ hd(l).firstname ^^ " " ^^ hd(l).lastname ^^ " " ^^ floatToString(hd(l).salary) ^^ " " ^^ hd(l).hometown ^^ " | \n" ^^ unpack(t, tl(l))
+
+}
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)
+fun view(model) {
+
+	open MvuAttrs;
+	open MvuHTML;
+
+	var text = 
+	switch(model.state) {
+		case NotStarted -> "Not Started"
+		case Waiting -> "Waiting"
+		case InsertDone -> "Inserted"
+		case DeleteDone -> "Delete"
+		case SelectDone(result) -> unpack("", result)
+	};
+
+	div(a0,
+		textNode("Delete by ID: ") +* input(type("text") +@ onKeyUp(fun(str) { ID( stringToInt(str) ) } ), MvuHTML.empty)
+	) +* 
+	div(a0, 
+		button(onClick(fun() { Delete(model.id) }), textNode("Delete by ID"))
+	) +*
+	div(a0,
+		textNode("First Name: ") +* input(type("text") +@ onKeyUp(fun(str) { FirstName(str) } ), MvuHTML.empty)
+	) +*
+	div(a0,
+		textNode("Last Name: ") +* input(type("text") +@ onKeyUp(fun(str) { LastName(str) } ), MvuHTML.empty)
+	) +*
+	div(a0,
+		textNode("Salary: ") +* input(type("text") +@ onKeyUp(fun(str) { Salary( stringToFloat(str) ) }), MvuHTML.empty)
+	) +*
+	div(a0,
+		textNode("Home Town: ") +* input(type("text") +@ onKeyUp(fun(str) { HomeTown(str) } ), MvuHTML.empty)
+	) +*
+	div(a0,
+		button(onClick(fun() { Insert(model.firstname, model.lastname, model.salary, model.hometown) } ), textNode("Insert"))
+	) +*
+	div(a0,
+		button(onClick(fun() { Select } ), textNode("Select"))
+	) +*
+	div(a0,
+		textNode(text)
+	)
+
+}
+
+sig insertTry : (String, String, Float, String) ~%~> ()
+fun insertTry(fn, ln, s, ht) server {
+	insert comediansNoID values (firstname, lastname, salary, hometown) [(firstname = fn, lastname = ln, salary = s, hometown = ht)]
+}
+
+sig deleteTry : (Int) ~%~> ()
+fun deleteTry(i) server {
+	delete (r <-- comedians) where (r.id == i)
+}
+
+fun selectTry() server {
+	query{
+		for (c <-- comedians)
+		where (c.hometown == "Glasgow")
+			[c]
+	}
+}
+
+sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+
+	switch(msg) {
+		case Insert(fn, ln, s, ht) ->
+			var cmd = 
+				MvuCommands.spawnProc(fun() { InsertFinished(insertTry(fn, ln, s, ht)) });
+		((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = Waiting), cmd)
+		case Delete(id) ->
+			var cmd = 
+				MvuCommands.spawnProc(fun() { DeleteFinished(deleteTry(id)) });
+		((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = Waiting), cmd)
+		case Select -> 
+			var cmd = 
+				MvuCommands.spawnProc(fun() { SelectFinished(selectTry()) });
+		((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = Waiting), cmd)
+		case InsertFinished -> ((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = InsertDone), MvuCommands.empty)
+		case DeleteFinished -> ((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = DeleteDone), MvuCommands.empty)
+		case SelectFinished(result) -> ((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = SelectDone(result)), MvuCommands.empty)
+		case ID(i) -> ((id = i, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = model.state), MvuCommands.empty)
+		case FirstName(fn) -> ((id = model.id, firstname = fn, lastname = model.lastname, salary = model.salary, hometown = model.hometown, state = model.state), MvuCommands.empty)
+		case LastName(ln) -> ((id = model.id, firstname = model.firstname, lastname = ln, salary = model.salary, hometown = model.hometown, state = model.state), MvuCommands.empty)
+		case Salary(s) -> ((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = s, hometown = model.hometown, state = model.state), MvuCommands.empty)
+		case HomeTown(ht) -> ((id = model.id, firstname = model.firstname, lastname = model.lastname, salary = model.salary, hometown = ht, state = model.state), MvuCommands.empty)
+	}
+
+}
+
+fun mainPage() {
+	Mvu.runCmd("placeholder", (id = 0, firstname = "", lastname = "", salary = 0.0, hometown = "", state = NotStarted), view, updt, MvuCommands.empty);
+
+	page
+	<html>
+	<body>
+	<div id="placeholder"></div>
+	</body>
+	</html>
+
+}
+
+serveThis(mainPage)
