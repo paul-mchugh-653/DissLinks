@@ -1271,10 +1271,12 @@ effect_app:
 fieldspec:
 | braced_fieldspec                                             { $1 }
 | COLON datatype                                               { Datatype.Present $2 }
+| COLON QUESTION datatype                                      { Datatype.Nullable $3 }
 | MINUS                                                        { Datatype.Absent }
 
 braced_fieldspec:
 | LBRACE COLON datatype RBRACE                                 { Datatype.Present $3 }
+| LBRACE COLON QUESTION datatype RBRACE                        { Datatype.Nullable $4 }
 | LBRACE MINUS RBRACE                                          { Datatype.Absent }
 | LBRACE VARIABLE RBRACE                                       { Datatype.Var (named_typevar $2 `Rigid) }
 | LBRACE PERCENTVAR RBRACE                                     { Datatype.Var (named_typevar $2 `Flexible) }
@@ -1284,10 +1286,12 @@ braced_fieldspec:
 efieldspec:
 | ebraced_fieldspec                                             { $1 }
 | COLON datatype                                               { Datatype.Present $2 }
+| COLON QUESTION datatype                                      { Datatype.Nullable $3 }
 | MINUS                                                        { Datatype.Absent }
 
 ebraced_fieldspec:
 | LBRACE COLON datatype RBRACE                                 { Datatype.Present $3 }
+| LBRACE COLON QUESTION datatype RBRACE                        { Datatype.Nullable $4 }
 | LBRACE MINUS RBRACE                                          { Datatype.Absent }
 // | LBRACE VARIABLE RBRACE                                       { Datatype.Var (named_typevar ~is_eff:true $2 `Rigid) }
 // | LBRACE PERCENTVAR RBRACE                                     { Datatype.Var (named_typevar ~is_eff:true $2 `Flexible) }

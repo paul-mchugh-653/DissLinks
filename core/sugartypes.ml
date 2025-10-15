@@ -224,6 +224,7 @@ module Datatype = struct
     | Recursive of SugarTypeVar.t * row
   and fieldspec =
     | Present of with_pos
+    | Nullable of with_pos
     | Absent
     | Var of SugarTypeVar.t
   and type_arg =
