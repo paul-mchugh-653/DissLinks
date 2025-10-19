@@ -445,6 +445,9 @@ object (o : 'self)
     | Present t ->
        let o, t = o#datatype t in
        o, Present t
+    | Nullable t ->
+       let o, t = o#datatype t in
+       o, Nullable t
     | Var utv ->
        let (name, (is_eff, sk), freedom) = SugarTypeVar.get_unresolved_exn utv in
        let o, resolved_pv = o#add name pk_presence ~is_eff:is_eff sk freedom in

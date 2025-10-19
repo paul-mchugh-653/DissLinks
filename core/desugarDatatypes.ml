@@ -203,6 +203,7 @@ module Desugar = struct
     match fs with
     | Datatype.Absent -> Types.Absent
     | Datatype.Present t -> Types.Present (datatype alias_env t)
+    | Datatype.Nullable t -> Types.Nullable (datatype alias_env t)
     (* | Var stv when is_anon stv ->
      *    let (_name, sk, freedom) = SugarTypeVar.get_unresolved_exn stv in
      *    `Var (make_anon_point var_env pos sk freedom) *)

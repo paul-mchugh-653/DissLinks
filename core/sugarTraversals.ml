@@ -645,6 +645,7 @@ class map =
     method fieldspec : Datatype.fieldspec -> Datatype.fieldspec =
       let open Datatype in function
       | Present _x -> let _x = o#datatype _x in Present _x
+      | Nullable _x -> let _x = o#datatype _x in Nullable _x
       | Absent -> Absent
       | Var _x -> let _x = o#type_variable _x in Var _x
 
@@ -1437,6 +1438,7 @@ class fold =
     method fieldspec : Datatype.fieldspec -> 'self_type =
       let open Datatype in function
       | Present _x -> let o = o#datatype _x in o
+      | Nullable _x -> let o = o#datatype _x in o
       | Absent -> o
       | Var _x -> let o = o#type_variable _x in o
 
@@ -2346,6 +2348,7 @@ class fold_map =
     method fieldspec : Datatype.fieldspec -> ('self_type * Datatype.fieldspec) =
       let open Datatype in function
       | Present _x -> let (o, _x) = o#datatype _x in (o, Present _x)
+      | Nullable _x -> let (o, _x) = o#datatype _x in (o, Nullable _x)
       | Absent -> (o, Absent)
       | Var _x -> let (o, _x) = o#type_variable _x in (o, Var _x)
 
