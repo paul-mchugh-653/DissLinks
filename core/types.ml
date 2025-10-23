@@ -179,7 +179,7 @@ and typ =
   | Closed
   (* Presence *)
   | Absent
-  | Present of typ
+  | Present of (typ * bool) (* Present's bool type is true if nullable and false if not *)
   (* Session *)
   | Input of (typ * session_type)
   | Output of (typ * session_type)
@@ -415,9 +415,9 @@ struct
          let (o, rv') = o#row_var rv in
          (o, Row (fsp', rv', d))
       (* Presence *)
-      | Present t ->
+      | Present (t, n) ->
          let (o, t') = o#typ t in
-         (o, Present t')
+         (o, Present (t', n))
       | Absent -> (o, Absent)
       (* FIXME: change some typs to session_types *)
       | Input (t, s) ->
@@ -618,7 +618,7 @@ class virtual type_predicate = object(self)
        let fields = FieldEnv.for_all (fun _ f -> self#field_satisfies vars f) fields in
        row_var && fields
     | Absent -> true
-    | Present t -> self#type_satisfies vars t
+    | Present (t, n) -> self#type_satisfies vars t
     | Select r | Choice r -> self#row_satisfies vars r
     | Input (a, b) | Output (a, b) | Operation (a, b, _) -> self#type_satisfies vars a && self#type_satisfies vars b
     | Dual s -> self#type_satisfies vars s
@@ -690,7 +690,7 @@ class virtual type_iter = object(self)
        FieldEnv.iter (fun _ f -> self#visit_field vars f) fields
     (* Presence *)
     | Absent -> ()
-    | Present t ->
+    | Present (t, n) ->
        self#visit_type vars t
     (* Session *)
     | Input (a, b) | Output (a, b) -> self#visit_type vars a; self#visit_type vars b
@@ -838,7 +838,7 @@ module Unl : Constraint = struct
       | Row _ as t -> super#type_satisfies vars t
       (* Presence *)
       | Absent -> true
-      | Present t -> o#type_satisfies vars t
+      | Present (t, n) -> o#type_satisfies vars t
       (* Session *)
       | Input _ | Output _ | Select _ | Choice _ | Dual _ | End -> false
 
@@ -1230,7 +1230,7 @@ let free_type_vars, free_row_type_vars, free_tyarg_vars =
        in
        S.union (free_type_vars' rec_vars (Meta row_var)) free_field_type_vars
     | Absent -> S.empty
-    | Present t -> free_type_vars' rec_vars t
+    | Present (t, n) -> free_type_vars' rec_vars t
     | Input (t, s) | Output (t, s) -> S.union (free_type_vars' rec_vars t) (free_type_vars' rec_vars s)
     | Select fields | Choice fields -> free_row_type_vars' rec_vars fields
     | Dual s -> free_type_vars' rec_vars s
@@ -1373,8 +1373,8 @@ and dual_row : var_map -> row -> row =
        StringMap.map
          (function
           | Absent -> Absent
-          | Present t ->
-             Present (dual_type rec_points t)
+          | Present (t, n) ->
+             Present ((dual_type rec_points t), n)
           | Meta _ -> assert false (* TODO: what should happen here? *)
           | _ -> raise tag_expectation_mismatch)
          fields
@@ -1455,7 +1455,7 @@ and subst_dual_field_spec : var_map -> field_spec -> field_spec =
   fun rec_points field_spec ->
   match field_spec with
   | Absent -> Absent
-  | Present t -> Present (subst_dual_type rec_points t)
+  | Present (t, n) -> Present ((subst_dual_type rec_points t), n)
   | Meta _ -> (* TODO: what should happen here? *) assert false
   | _ -> raise tag_expectation_mismatch
 and subst_dual_type_arg : var_map -> type_arg -> type_arg =
@@ -1652,7 +1652,7 @@ and normalise_datatype rec_names t =
          FieldEnv.empty
      in
      Row (fields, row_var, dual)
-  | Present t -> Present (nt t)
+  | Present (t, n) -> Present ((nt t), n)
   | Absent -> Absent
   | Input (t, s)         -> Input (nt t, nt s)
   | Output (t, s)        -> Output (nt t, nt s)
@@ -1723,7 +1723,7 @@ let wrong_type    = Application (wrong, [])
 let empty_type    = Variant (make_empty_closed_row ())
 let wild = "wild"
 let hear = "hear"
-let wild_present   = (wild, Present unit_type)
+let wild_present   = (wild, Present (unit_type, false))
 let hear_present t = (hear, Present t)
 
 let is_builtin_effect lbl =
@@ -1922,7 +1922,7 @@ struct
        let row_var = free_bound_row_var_vars bound_vars row_var in
        field_type_vars @ row_var
     (* Presence *)
-    | Present t -> free_bound_type_vars bound_vars t
+    | Present (t, n) -> free_bound_type_vars bound_vars t
     | Absent -> []
     (* Session *)
     | Input (t, s) | Output (t, s) ->
@@ -2458,7 +2458,7 @@ struct
           FieldEnv.fold
             (fun i f tuple_env ->
                match f with
-                 | Present t        -> IntMap.add (int_of_string i) t tuple_env
+                 | Present (t, n)        -> IntMap.add (int_of_string i) t tuple_env
                  | (Absent | Meta _) -> assert false
                  | _ -> raise tag_expectation_mismatch)
             field_env
@@ -2608,13 +2608,13 @@ struct
          | Function (args, effects, t) ->
             let ht fields =
               match FieldEnv.find hear fields with
-              | Present t -> sd t
+              | Present (t, n) -> sd t
               | _          -> assert false in
             ppr_function_type args effects t ">" ht
          | Lolli    (args, effects, t) ->
             let ht fields =
               sd (match FieldEnv.find hear fields with
-                  | Present t -> t
+                  | Present (t, n) -> t
                   | _          -> assert false)
             in ppr_function_type args effects t "@" ht
          | Record r ->
@@ -2689,7 +2689,7 @@ struct
          | Dual s -> "~" ^ sd s
          | End -> "End"
   and presence ({ bound_vars; _ } as context) ((policy, vars) as p) = function
-      | Present t ->
+      | Present (t, n) ->
         begin
           match concrete_type t with
           | Record row when is_empty_row row -> ""
@@ -3213,7 +3213,7 @@ module RoundtripPrinter : PRETTY_PRINTER = struct
                 (* TODO maybe integrate this into the existing cycle to optimize it *)
                 let fields = FieldEnv.map
                                (function
-                                | Present p -> Present (maybe_contract p)
+                                | Present (p, n) -> Present ((maybe_contract p), n)
                                 | x -> x) fields in
                 match Unionfind.find rv_pt with
                 | Var (effect_vid, _, _) ->
@@ -3776,7 +3776,7 @@ module RoundtripPrinter : PRETTY_PRINTER = struct
           (match tp with
            | Absent ->
               StringBuffer.write buf "-"
-           | Present tp ->
+           | Present (tp, n) ->
               (* Nullary variant payloads do not get printed. *)
               let is_nullary = concrete_type tp = unit_type in
               let inside_variant =
@@ -4118,7 +4118,7 @@ module RoundtripPrinter : PRETTY_PRINTER = struct
               -> with_value alias_recapp (name, arg_kinds, arg_types, is_dual)
 
             | Meta pt            -> meta ctx pt
-            | Present t          -> with_value presence t
+            | Present (t, n)     -> with_value presence t
             | Absent             -> constant "-"
             | Primitive t        -> with_value primitive t
 
@@ -4507,7 +4507,7 @@ let make_fresh_envs : datatype -> datatype IntMap.t * row IntMap.t * field_spec 
          | row -> make_env boundvars row
        in
        union [field_vars; row_vars]
-    | Present t -> make_env boundvars t
+    | Present (t, n) -> make_env boundvars t
     | Absent -> empties
     | Input (t, s) | Output (t, s) -> union [make_env boundvars t; make_env boundvars s]
     | Select row | Choice row    -> make_env boundvars row
@@ -4620,10 +4620,10 @@ let is_sub_type, is_sub_row =
        let sub_fields =
          FieldEnv.fold (fun name f _ ->
              match f with
-             | Present t ->
+             | Present (t, n) ->
                 if FieldEnv.mem name rfield_env then
                   match FieldEnv.find name rfield_env with
-                  | Present t' ->
+                  | Present (t', n) ->
                      (is_sub_type rec_vars (t, t') &&
                         is_sub_type rec_vars (t', t))
                   | Absent
@@ -4653,10 +4653,10 @@ let is_sub_type, is_sub_row =
       let sub_fields =
         FieldEnv.fold (fun name f _ ->
                          match f with
-                           | Present t ->
+                           | Present (t, n) ->
                                if FieldEnv.mem name rfield_env then
                                  match FieldEnv.find name rfield_env with
-                                   | Present t' ->
+                                   | Present (t', n) ->
                                        is_sub_type rec_vars (t, t')
                                    | Absent | Meta _ -> false
                                    | _ -> raise tag_expectation_mismatch
@@ -4689,7 +4689,7 @@ let make_tuple_type (ts : datatype list) : datatype =
   Record
     (snd
        (List.fold_left
-          (fun (n, row) t -> n+1, row_with (string_of_int n, Present t) row)
+          (fun (n, row) t -> n+1, row_with (string_of_int n, Present (t, false)) row)
           (1, make_empty_closed_row ())
           ts))
 
@@ -4751,7 +4751,7 @@ let remove_field : ?idempotent:bool -> Label.t -> row -> row
 
 let make_closed_row : datatype field_env -> row =
   fun fields ->
-  Row ((FieldEnv.map (fun t -> Present t) fields), closed_row_var, false)
+  Row ((FieldEnv.map (fun t -> Present (t, false)) fields), closed_row_var, false)
 
 let make_record_type ts = Record (make_closed_row ts)
 let make_variant_type ts = Variant (make_closed_row ts)

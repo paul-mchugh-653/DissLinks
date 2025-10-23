@@ -151,7 +151,7 @@ and typ =
   | Closed
   (* Presence *)
   | Absent
-  | Present of typ
+  | Present of (typ * bool)
   (* Session *)
   | Input of (typ * session_type)
   | Output of (typ * session_type)
