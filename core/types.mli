@@ -252,7 +252,7 @@ val wrong_type : datatype
 val wild : Label.t
 val hear : Label.t
 val wild_present : Label.t * datatype
-val hear_present : datatype -> (Label.t * datatype)
+val hear_present : datatype * bool -> (Label.t * datatype)
 val is_builtin_effect : string -> bool
 
 (** get type variables *)
@@ -321,8 +321,8 @@ val get_row_var : row -> int option
 (** building rows *)
 val make_closed_row : datatype field_env -> row
 val row_with : (string * field_spec) -> row -> row
-val extend_row : datatype field_env -> row -> row
-val extend_row_safe : datatype field_env -> row -> row option
+val extend_row : (datatype * bool) field_env -> row -> row
+val extend_row_safe : (datatype * bool) field_env -> row -> row option
 val open_row : Subkind.t -> row -> row
 val close_row : row -> row
 val closed_wild_row : row
@@ -375,7 +375,7 @@ val unwrap_list_type : typ -> typ
 val unwrap_mapentry_type : typ -> typ * typ
 val unwrap_map_type : typ -> typ * typ
 
-val extract_tuple : row -> datatype list
+val extract_tuple : row -> (datatype * bool) list
 
 (** type constructors *)
 val make_tuple_type : datatype list -> datatype

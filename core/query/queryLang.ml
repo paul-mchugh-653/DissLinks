@@ -194,7 +194,7 @@ let field_types_of_row r =
 let table_field_types Value.Table.{ row = (fields, _, _); temporal_fields; _ } =
     (* As well as the declared fields in the table, we must also include
      * the period-stamping fields included in the temporal metadata. *)
-    let dt x = (x, Types.Primitive Primitive.DateTime) in
+    let dt x = (x, (Types.Primitive Primitive.DateTime, false)) in
     let metadata_fields =
         OptionUtils.opt_app (fun (x, y) -> [dt x; dt y]) [] temporal_fields
     in
@@ -240,7 +240,7 @@ let unbox_string =
               (unbox_list v))
     | _ -> raise (runtime_type_error "failed to unbox string")
 
-let recdty_field_types (t : Types.datatype) : Types.datatype StringMap.t =
+let recdty_field_types (t : Types.datatype) : (Types.datatype * bool) StringMap.t =
       field_types_of_row (TypeUtils.extract_row t)
 
 let rec subst t x u =
@@ -368,7 +368,12 @@ let rec type_of_expression : t -> Types.datatype = fun v ->
   | Project (w, name) ->
       begin
         match te w with
-        | Types.Record _ as rty -> StringMap.find name (recdty_field_types rty)
+        | Types.Record _ as rty -> 
+                let (field_ty, nullable) = StringMap.find name (recdty_field_types rty) in
+                        if nullable then
+                                Types.make_variant_type (Utility.StringMap.of_list[("Just", field_ty); ("Nothing", Types.make_empty_closed_row ())])
+                        else
+                                field_ty
         | ty ->
             failwith
               (Format.asprintf ("term:\n" ^^
@@ -479,7 +484,7 @@ let labels_of_field_types field_types =
     field_types
     StringSet.empty
 
-let recdty_field_types (t : Types.datatype) : Types.datatype StringMap.t =
+let recdty_field_types (t : Types.datatype) : (Types.datatype * bool) StringMap.t =
   field_types_of_row (TypeUtils.extract_row t)
 
 let env_of_value_env policy value_env =
@@ -1030,7 +1035,7 @@ struct
   | Types.Record fields ->
     Types.make_record_type
       (StringMap.fold
-         (fun name t fields ->
+         (fun name (t, n) fields ->
            match flatten_base_type t with
              | Types.Record inner_fields ->
                StringMap.fold
@@ -1039,7 +1044,7 @@ struct
                  (field_types_of_row inner_fields)
                  fields
              | Types.Primitive _ as t ->
-               StringMap.add name t fields
+               StringMap.add name (t, n) fields
              | _ -> assert false)
          (field_types_of_row fields)
          StringMap.empty)

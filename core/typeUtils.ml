@@ -56,11 +56,11 @@ let rec project_type ?(overstep_quantifiers=true) name t = match (concrete_type 
         t
   | (Application (absty, [PrimaryKind.Type, typ]), _) when
       (Abstype.name absty) = "TransactionTime" || (Abstype.name absty = "ValidTime") ->
-        if name = TemporalField.data_field then typ
+        if name = TemporalField.data_field then (typ, true)
         else if
           name = TemporalField.from_field ||
           name = TemporalField.to_field then
-          Primitive (Primitive.DateTime)
+          (Primitive (Primitive.DateTime), true)
         else
           error ("Trying to project " ^ name ^ " from temporal metadata: " ^ string_of_datatype t)
   | (t, _) ->
@@ -363,7 +363,7 @@ let check_type_wellformedness primary_kind t : unit =
        idatatype f; idatatype t;
        pk_type
     (* Presence *)
-    | Present t ->
+    | Present (t, n) ->
        idatatype t;
        pk_presence
     | Absent -> pk_presence
@@ -405,5 +405,5 @@ let pack_types : Types.datatype list -> Types.datatype = function
   | ts -> Types.make_tuple_type ts
 
 let from_present : Types.field_spec -> Types.datatype = function
-  | Present t -> t
+  | Present (t,n) -> t
   | _ -> raise Types.tag_expectation_mismatch
