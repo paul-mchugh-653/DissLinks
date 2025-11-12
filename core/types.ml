@@ -4756,6 +4756,13 @@ let make_closed_row : datatype field_env -> row =
 let make_record_type ts = Record (make_closed_row ts)
 let make_variant_type ts = Variant (make_closed_row ts)
 
+let make_closed_row' : (datatype * bool) field_env -> row = 
+        fun fields ->
+        Row ((FieldEnv.map (fun t -> Present t) fields), closed_row_var, false)
+
+
+let make_record_type' ts = Record(make_closed_row' ts)
+
 let make_table_type (t, r, w, n) = Table (t, r, w, n)
 
 (* Alias of more general TemporalTable type *)

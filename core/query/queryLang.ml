@@ -187,7 +187,8 @@ let field_types_of_spec_map =
           | Types.Present t -> t
           | _ -> assert false)
 
-let field_types_of_row r =
+(*  *)
+let field_types_of_row r : (Types.typ * bool) StringMap.t =
         let (field_spec_map,_,_) = TypeUtils.extract_row_parts r in
           field_types_of_spec_map field_spec_map
 
@@ -1033,14 +1034,14 @@ struct
   let rec flatten_base_type = function
   | Types.Primitive _ as t -> t
   | Types.Record fields ->
-    Types.make_record_type
+    Types.make_record_type'
       (StringMap.fold
          (fun name (t, n) fields ->
            match flatten_base_type t with
              | Types.Record inner_fields ->
                StringMap.fold
-                 (fun name' t fields ->
-                   StringMap.add (name ^ "@" ^ name') t fields)
+                 (fun name' (t, n) fields ->
+                   StringMap.add (name ^ "@" ^ name') (t, n) fields)
                  (field_types_of_row inner_fields)
                  fields
              | Types.Primitive _ as t ->
@@ -1170,7 +1171,7 @@ struct
     | Types.Record nrow ->
         let nfields =
           StringMap.fold
-          <| (fun k v acc -> (k, ur ~prefix:(extend_label k) v frow)::acc)
+          <| (fun k (v,n) acc -> (k, ur ~prefix:(extend_label k) v frow)::acc)
           <| field_types_of_row nrow
           <| []
         in `Record nfields

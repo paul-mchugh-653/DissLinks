@@ -98,7 +98,7 @@ struct
         let (fields, _, _) = TypeUtils.extract_row_parts row in
         `Record (StringMap.map
           (function
-             | Present t -> nested_type_of_type t
+             | Present (t, n) -> nested_type_of_type t
              | _ -> assert false) fields)
     | Types.Application (l, [(primary_kind, t)]) when l = Types.list ->
        assert (primary_kind = PrimaryKind.Type);
@@ -468,7 +468,7 @@ struct
                (fun (_genkind, x, source) ->
                  match source with
                    | QL.Table t ->
-                     let tyx = Types.make_record_type (QL.table_field_types t) in
+                     let tyx = Types.make_record_type' (QL.table_field_types t) in
                      QL.eta_expand_var (x, tyx)
                    | _ -> assert false)
                gs_out) in
@@ -492,7 +492,7 @@ struct
       QL.recdty_field_types
         (Types.make_tuple_type
            [r_out_type; index_type])
-      |> Types.make_record_type
+      |> Types.make_record_type'
     in
       (q, QL.For (None, gs_out, [], where x_out (QL.Singleton (pair r_out index))),
        z, QL.For (None, gs_in, os,
