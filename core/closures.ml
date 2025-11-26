@@ -456,7 +456,7 @@ struct
             if IntSet.mem x cvars then
               (* We cannot return t as the type of the result here. If x refers to a hoisted function that was generalised, then
                  t has additional quantifiers that are not present in the corresponding type of projecting x from parent_env *)
-              let (projected_t, nullable) = TypeUtils.project_type (string_of_int x) (thd3 (o#var parent_env)) in
+              let projected_t = TypeUtils.project_type (string_of_int x) (thd3 (o#var parent_env)) in
               Project (string_of_int x, Variable parent_env), projected_t
             else if IntMap.mem x fenv then
               let zs = (IntMap.find x fenv).termvars in

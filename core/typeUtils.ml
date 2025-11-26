@@ -52,15 +52,18 @@ let rec split_variant_type name t = match concrete_type t with
 let rec project_type ?(overstep_quantifiers=true) name t = match (concrete_type t, overstep_quantifiers) with
   | (ForAll (_, t), true) -> project_type name t
   | (Record row, _) ->
-      let t, _ = split_row name row in
-        t
+      let (t, nullable), _ = split_row name row in
+        if nullable then
+                Types.make_variant_type (Utility.StringMap.of_list[("Just", t); ("Nothing", Types.make_empty_closed_row ())])
+        else
+                t
   | (Application (absty, [PrimaryKind.Type, typ]), _) when
       (Abstype.name absty) = "TransactionTime" || (Abstype.name absty = "ValidTime") ->
-        if name = TemporalField.data_field then (typ, false)
+        if name = TemporalField.data_field then typ
         else if
           name = TemporalField.from_field ||
           name = TemporalField.to_field then
-          (Primitive (Primitive.DateTime), false)
+          Primitive (Primitive.DateTime)
         else
           error ("Trying to project " ^ name ^ " from temporal metadata: " ^ string_of_datatype t)
   | (t, _) ->

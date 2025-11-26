@@ -75,11 +75,11 @@ object (o : 'self_type)
             let c = Binder.to_name bndr in
             let s = Binder.to_type bndr in
             let envs = o#backup_envs in
-            let o = {< var_env = TyEnv.bind c (TypeUtils.select_type label s) (o#get_var_env ()) >} in
+            let o = {< var_env = TyEnv.bind c ( fst (TypeUtils.select_type label s)) (o#get_var_env ()) >} in
             let (o, p, t) = desugar_cp o p in
             let o = o#restore_envs envs in
             o, block_node
-                ([val_binding (variable_pat ~ty:(TypeUtils.select_type label s) c)
+                ([val_binding (variable_pat ~ty:( fst (TypeUtils.select_type label s)) c)
                                (with_dummy_pos (Select (label, var c)))],
                  with_dummy_pos p), t
          | CPOffer (bndr, cases) ->
@@ -87,10 +87,10 @@ object (o : 'self_type)
             let s = Binder.to_type bndr in
             let desugar_branch (label, p) (o, cases) =
               let envs = o#backup_envs in
-              let o = {< var_env = TyEnv.bind c (TypeUtils.choice_at label s) (o#get_var_env ()) >} in
+              let o = {< var_env = TyEnv.bind c ( fst (TypeUtils.choice_at label s)) (o#get_var_env ()) >} in
               let (o, p, t) = desugar_cp o p in
               let pat : Pattern.with_pos = with_dummy_pos (Pattern.Variant (label,
-                      Some (variable_pat ~ty:(TypeUtils.choice_at label s) c))) in
+                      Some (variable_pat ~ty:( fst (TypeUtils.choice_at label s)) c))) in
               o#restore_envs envs, ((pat, with_dummy_pos p), t) :: cases in
             let (o, cases) = List.fold_right desugar_branch cases (o, []) in
             (match List.split cases with

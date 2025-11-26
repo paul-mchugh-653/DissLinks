@@ -472,7 +472,7 @@ class transform (env : Types.typing_environment) =
                let  ( fs, rv, closed ) =
                  Types.flatten_row row |> TypeUtils.extract_row_parts
                in
-               let fs = List.fold_left2 (fun fs (name, _) t -> StringMap.add name (Present t) fs) fs fields ts in
+               let fs = List.fold_left2 (fun fs (name, _) t -> StringMap.add name (Present (t, false)) fs) fs fields ts in
                Record (Row (fs, rv, closed))
             | _ -> t
           in
