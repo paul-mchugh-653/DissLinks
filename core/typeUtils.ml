@@ -56,11 +56,11 @@ let rec project_type ?(overstep_quantifiers=true) name t = match (concrete_type 
         t
   | (Application (absty, [PrimaryKind.Type, typ]), _) when
       (Abstype.name absty) = "TransactionTime" || (Abstype.name absty = "ValidTime") ->
-        if name = TemporalField.data_field then (typ, true)
+        if name = TemporalField.data_field then (typ, false)
         else if
           name = TemporalField.from_field ||
           name = TemporalField.to_field then
-          (Primitive (Primitive.DateTime), true)
+          (Primitive (Primitive.DateTime), false)
         else
           error ("Trying to project " ^ name ^ " from temporal metadata: " ^ string_of_datatype t)
   | (t, _) ->

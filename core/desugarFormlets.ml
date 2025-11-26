@@ -121,7 +121,7 @@ object (o : 'self_type)
                         let p, et =
                           List.fold_right
                             (fun arg (base, ft) ->
-                               let (arg_type, nullable) = List.hd (TypeUtils.arg_types ft) in
+                               let arg_type = List.hd (TypeUtils.arg_types ft) in
                                let ft = TypeUtils.return_type ft in
                                let base : phrase =
                                  fn_appl ~ppos atatat_str

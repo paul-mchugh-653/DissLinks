@@ -376,7 +376,7 @@ val unwrap_list_type : typ -> typ
 val unwrap_mapentry_type : typ -> typ * typ
 val unwrap_map_type : typ -> typ * typ
 
-val extract_tuple : row -> (datatype * bool) list
+val extract_tuple : row -> datatype list
 
 (** type constructors *)
 val make_tuple_type : datatype list -> datatype

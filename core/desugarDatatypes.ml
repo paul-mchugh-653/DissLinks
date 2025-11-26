@@ -107,7 +107,7 @@ module Desugar = struct
         | Tuple ks ->
             let labels = map string_of_int (Utility.fromTo 1 (1 + length ks)) in
             let unit = Types.make_empty_closed_row () in
-            let present (s, x) = (s, Types.Present x)
+            let present (s, x) = (s, Types.Present (x, false))
             in
               Types.Record (fold_right2 (curry (Types.row_with -<- present)) labels (map datatype ks) unit)
         | Record r -> Types.Record (row alias_env r t')

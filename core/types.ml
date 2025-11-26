@@ -1765,7 +1765,7 @@ let is_tuple ?(allow_onetuples=false) row =
 let extract_tuple = function
   | Row (field_env, _, _) ->
      FieldEnv.to_list (fun _ -> function
-         | Present t -> t
+         | Present (t, n) -> t
          | Absent | Meta _ -> assert false
          | _ -> raise tag_expectation_mismatch) field_env
   | _ -> raise tag_expectation_mismatch

@@ -24,7 +24,7 @@ let type_section env =
       let (fields, rho, _) = TypeUtils.extract_row_parts row in
       let eb, e = Types.fresh_row_quantifier default_effect_subkind in
 
-      let r = Record (Row (StringMap.add label (Present a) fields, rho, false)) in
+      let r = Record (Row (StringMap.add label (Present (a, false)) fields, rho, false)) in
         ForAll ([ab; rhob; eb],
                 Function (Types.make_tuple_type [r], e, a))
   | Name var -> TyEnv.find var env
@@ -318,7 +318,8 @@ class transform (env : Types.typing_environment) =
             (o, Spawn (k, spawn_loc, body, Some inner_effects), process_type)
       | Sugartypes.Select (l, e) ->
          let (o, e, t) = o#phrase e in
-         (o, Sugartypes.Select (l, e), TypeUtils.select_type l t)
+         let sel_ty, _ = TypeUtils.select_type l t in
+         (o, Sugartypes.Select (l, e), sel_ty)
       | Offer (e, bs, Some t) ->
           let (o, e, _) = o#phrase e in
           let (o, bs) =
@@ -438,13 +439,13 @@ class transform (env : Types.typing_environment) =
                     let (o, fields, field_types) = list o fields in
                       (o,
                        (name, e)::fields,
-                       StringMap.add name t field_types)
+                       StringMap.add name (t, false) field_types)
             in
               list o fields in
           let (o, base, base_type) = option o (fun o -> o#phrase) base in
           let t =
             match base_type with
-              | None -> Types.make_record_type field_types
+              | None -> Types.make_record_type' field_types
               | Some t ->
                   begin
                     match TypeUtils.concrete_type t with

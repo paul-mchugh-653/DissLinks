@@ -370,9 +370,9 @@ let eq_types occurrence : type_eq_context -> (Types.datatype * Types.datatype) -
          | Absent -> true
          | _ -> false
          end
-      | Present lt ->
+      | Present (lt, ln) ->
          begin match t2 with
-         | Present rt -> eqt (context, lt, rt)
+         | Present (rt, rn) -> eqt (context, lt, rt)
          | _ -> false
          end
       (* Session *)
@@ -421,7 +421,7 @@ let eq_types occurrence : type_eq_context -> (Types.datatype * Types.datatype) -
     and eq_presence (context, l, r) =
       match Types.concrete_field_spec l, Types.concrete_field_spec r with
       | Absent, Absent -> true
-      | Present lt, Present rt ->
+      | Present (lt, ln), Present (rt, rn) ->
          let b = eqt (context, lt, rt) in
          b
       | Meta lpoint, Meta rpoint ->
@@ -478,7 +478,7 @@ let check_eq_type_lists = fun (ctx : type_eq_context) exptl actl occurrence ->
 let ensure_effect_present_in_row ctx allowed_effects required_effect_name required_effect_type occurrence =
   let (map, _, _) = fst (Types.unwrap_row allowed_effects) |> TypeUtils.extract_row_parts in
   match StringMap.find_opt required_effect_name map with
-    | Some (T.Present et) -> check_eq_types ctx et required_effect_type occurrence
+    | Some (T.Present (et, en)) -> check_eq_types ctx et required_effect_type occurrence
     | _ -> raise_ir_type_error ("Required effect " ^ required_effect_name ^ " not present in effect row " ^ Types.string_of_row allowed_effects) occurrence
 
 
