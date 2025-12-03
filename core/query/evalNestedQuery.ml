@@ -468,7 +468,7 @@ struct
                (fun (_genkind, x, source) ->
                  match source with
                    | QL.Table t ->
-                     let tyx = Types.make_record_type' (QL.table_field_types t) in
+                     let tyx = Types.make_record_type (QL.table_field_types t) in
                      QL.eta_expand_var (x, tyx)
                    | _ -> assert false)
                gs_out) in
@@ -492,7 +492,7 @@ struct
       QL.recdty_field_types
         (Types.make_tuple_type
            [r_out_type; index_type])
-      |> Types.make_record_type'
+      |> Types.make_record_type
     in
       (q, QL.For (None, gs_out, [], where x_out (QL.Singleton (pair r_out index))),
        z, QL.For (None, gs_in, os,

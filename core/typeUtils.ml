@@ -37,7 +37,7 @@ let split_row name row =
 let rec variant_at ?(overstep_quantifiers=true) name t = match (concrete_type t, overstep_quantifiers) with
   | (ForAll (_, t), true) -> variant_at name t
   | (Variant row, _) ->
-      let t, _ = split_row name row in t
+      let (t, _), _ = split_row name row in t
   | (t, _) ->
       error ("Attempt to deconstruct non-variant type "^string_of_datatype t)
 

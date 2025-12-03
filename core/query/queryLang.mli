@@ -59,7 +59,7 @@ val expression_of_base_value : Value.t -> t
 
 val check_policies_compatible : CommonTypes.QueryPolicy.t -> CommonTypes.QueryPolicy.t -> unit
 
-val field_types_of_row : Types.datatype -> (Types.datatype * bool) StringMap.t
+val field_types_of_row : Types.datatype -> (Types.datatype) StringMap.t
 
 val unbox_xml : t -> Value.xmlitem
 
@@ -75,7 +75,7 @@ val used_database : t -> Value.database option
 
 val string_of_t : t -> string
 
-val recdty_field_types : Types.datatype -> (Types.datatype * bool) StringMap.t
+val recdty_field_types : Types.datatype -> (Types.datatype) StringMap.t
 
 val env_of_value_env : CommonTypes.QueryPolicy.t ->  Value.env -> env
 
@@ -98,7 +98,7 @@ val default_of_base_type : Primitive.t -> t
 val value_of_expression : t -> Value.t
 
 val labels_of_field_types : 'a Utility.StringMap.t -> Utility.StringSet.t
-val table_field_types : Value.table -> (Types.typ * bool) Utility.StringMap.t
+val table_field_types : Value.table -> (Types.typ) Utility.StringMap.t
 val is_list : t -> bool
 
 val likeify : t -> t option

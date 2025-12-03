@@ -28,7 +28,7 @@ val extract_row_parts : Types.datatype -> Types.row'
 val iter_row : (string -> Types.field_spec -> unit) -> Types.row -> unit
 val split_row : string -> Types.row -> ((Types.datatype * bool) * Types.row)
 val split_variant_type : string -> Types.datatype -> (Types.datatype * Types.datatype)
-val variant_at : ?overstep_quantifiers:bool -> string -> Types.datatype -> Types.datatype * bool
+val variant_at : ?overstep_quantifiers:bool -> string -> Types.datatype -> Types.datatype
 
 val quantifiers : Types.datatype -> Quantifier.t list
 val split_quantified_type : Types.datatype -> (Quantifier.t list * Types.datatype)

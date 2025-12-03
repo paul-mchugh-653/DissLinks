@@ -180,7 +180,7 @@ let rec reduce_for_source : Q.t * (Q.t -> Q.t) -> Q.t =
                   let (from_field, to_field) = OptionUtils.val_of temporal_fields in
                   (* Transaction / Valid-time tables: Need to wrap as metadata *)
                   (* First, generate a fresh variable for the table *)
-                  let make_spec_map = StringMap.map (fun x -> Types.Present x) in
+                  let make_spec_map = StringMap.map (fun x -> Types.Present (x, false)) in
                   let field_types = Q.table_field_types table in
                   let base_field_types =
                     StringMap.filter
