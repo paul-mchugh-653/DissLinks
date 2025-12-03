@@ -322,8 +322,8 @@ val get_row_var : row -> int option
 val make_closed_row : datatype field_env -> row
 val make_closed_row' : (datatype * bool) field_env -> row
 val row_with : (string * field_spec) -> row -> row
-val extend_row : (datatype * bool) field_env -> row -> row
-val extend_row_safe : (datatype * bool) field_env -> row -> row option
+val extend_row : datatype field_env -> row -> row
+val extend_row_safe : datatype field_env -> row -> row option
 val open_row : Subkind.t -> row -> row
 val close_row : row -> row
 val closed_wild_row : row

@@ -4711,7 +4711,7 @@ let extend_row_check_duplicates fields row =
      let (unified_fields, has_duplicates) =
        FieldEnv.fold
          (fun name t (fields, has_duplicates) ->
-           (FieldEnv.add name (Present t) fields), has_duplicates && FieldEnv.mem name fields)
+           (FieldEnv.add name (Present (t, false)) fields), has_duplicates && FieldEnv.mem name fields)
          fields
          (fields', false) in
      Row (unified_fields,row_var, dual), has_duplicates

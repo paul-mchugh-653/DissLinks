@@ -886,7 +886,7 @@ struct
             ensure (Types.is_closed_row rows_r) "Inserted record must have closed row" (SSpec special);
             TypeUtils.iter_row (fun field presence_spec ->
                  match presence_spec with
-                  | Present actual_type_field ->
+                  | Present (actual_type_field, nullable) ->
                     (* Ensure that the field we update is in the write row and the types match
                        As an invariant of Table types, it should then also be in the read row *)
                     let write_type = TypeUtils.project_type field table_write in
@@ -901,7 +901,7 @@ struct
             ensure (Types.is_closed_row table_needed_r) "Needed row of table type must be closed" (SSpec special);
             TypeUtils.iter_row (fun field presence_spec ->
                  match presence_spec with
-                  | Present needed_type ->
+                  | Present (needed_type, nullable) ->
                     (* Ensure that all fields Present in the needed row are being inserted *)
                     let inserted_type = TypeUtils.project_type field rows_t in
                     o#check_eq_types inserted_type needed_type (SSpec special)
@@ -945,7 +945,7 @@ struct
             ensure (Types.is_closed_row body_record_row) "Open row as result of update" (SSpec special);
             TypeUtils.iter_row (fun field presence_spec ->
                 match presence_spec with
-                  | Present actual_type_field ->
+                  | Present (actual_type_field, nullable) ->
                     (* Ensure that the field we update is in the write row and the types match *)
                     let expected_type_field = TypeUtils.project_type field table_write in
                     o#check_eq_types expected_type_field actual_type_field (SSpec special)
@@ -1051,7 +1051,7 @@ struct
           (* We now construct the inner effects from the outer effects and branch_presence_spec_types *)
           let (outer_effects_map, outer_effects_var, outer_effects_dualized) = outer_effects_parts in
           (* For each case branch, the corresponding entry goes directly into the field spec map of the inner effect row *)
-          let inner_effects_map_from_branches = StringMap.map (fun x -> Present x) branch_presence_spec_types in
+          let inner_effects_map_from_branches = StringMap.map (fun x -> Present (x, false)) branch_presence_spec_types in
           (* We now add all entries from the outer effects that were not touched by the handler to the inner effects *)
           let inner_effects_map = StringMap.fold (fun effect_ outer_presence_spec map ->
               if StringMap.mem effect_ inner_effects_map_from_branches then
@@ -1104,7 +1104,7 @@ struct
           let arg_type_actual =  make_tuple_type vs_t in
 
           (* Checks that "name" is Present in the current effect row *)
-          let effect_type = fst (TypeUtils.split_row name allowed_effects) in
+          let effect_type = fst (fst (TypeUtils.split_row name allowed_effects)) in
            (* contrary to normal functions, the argument type is not tuple-ified if there is only a single argument.
               Therefore, can't use return_type and arg_types from TypeUtils here, because these have those assumptions hard-coded *)
           let (arg_type_expected, effects, ret_type_expected) = match TypeUtils.concrete_type effect_type with

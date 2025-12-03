@@ -439,13 +439,13 @@ class transform (env : Types.typing_environment) =
                     let (o, fields, field_types) = list o fields in
                       (o,
                        (name, e)::fields,
-                       StringMap.add name (t, false) field_types)
+                       StringMap.add name t field_types)
             in
               list o fields in
           let (o, base, base_type) = option o (fun o -> o#phrase) base in
           let t =
             match base_type with
-              | None -> Types.make_record_type' field_types
+              | None -> Types.make_record_type field_types
               | Some t ->
                   begin
                     match TypeUtils.concrete_type t with
