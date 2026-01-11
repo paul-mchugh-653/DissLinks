@@ -572,7 +572,7 @@ struct
     M.bind (alien_binding (x_info, object_name, language)) rest
 
   let select (l, e) =
-    let t = TypeUtils.select_type l (sem_type e) in
+    let (t, _) = TypeUtils.select_type l (sem_type e) in
       bind e (fun v -> lift (Special (Select (l, v)), t))
 
   let offer env (v, cases, t) =

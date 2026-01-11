@@ -366,7 +366,7 @@ let check_type_wellformedness primary_kind t : unit =
        idatatype f; idatatype t;
        pk_type
     (* Presence *)
-    | Present (t, n) ->
+    | Present (t, _n) ->
        idatatype t;
        pk_presence
     | Absent -> pk_presence
@@ -408,5 +408,5 @@ let pack_types : Types.datatype list -> Types.datatype = function
   | ts -> Types.make_tuple_type ts
 
 let from_present : Types.field_spec -> Types.datatype = function
-  | Present (t,n) -> t
+  | Present (t,_n) -> t
   | _ -> raise Types.tag_expectation_mismatch

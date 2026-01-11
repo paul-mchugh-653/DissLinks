@@ -618,7 +618,7 @@ class virtual type_predicate = object(self)
        let fields = FieldEnv.for_all (fun _ f -> self#field_satisfies vars f) fields in
        row_var && fields
     | Absent -> true
-    | Present (t, n) -> self#type_satisfies vars t
+    | Present (t, _n) -> self#type_satisfies vars t
     | Select r | Choice r -> self#row_satisfies vars r
     | Input (a, b) | Output (a, b) | Operation (a, b, _) -> self#type_satisfies vars a && self#type_satisfies vars b
     | Dual s -> self#type_satisfies vars s
@@ -690,7 +690,7 @@ class virtual type_iter = object(self)
        FieldEnv.iter (fun _ f -> self#visit_field vars f) fields
     (* Presence *)
     | Absent -> ()
-    | Present (t, n) ->
+    | Present (t, _n) ->
        self#visit_type vars t
     (* Session *)
     | Input (a, b) | Output (a, b) -> self#visit_type vars a; self#visit_type vars b
@@ -838,7 +838,7 @@ module Unl : Constraint = struct
       | Row _ as t -> super#type_satisfies vars t
       (* Presence *)
       | Absent -> true
-      | Present (t, n) -> o#type_satisfies vars t
+      | Present (t, _n) -> o#type_satisfies vars t
       (* Session *)
       | Input _ | Output _ | Select _ | Choice _ | Dual _ | End -> false
 
@@ -1230,7 +1230,7 @@ let free_type_vars, free_row_type_vars, free_tyarg_vars =
        in
        S.union (free_type_vars' rec_vars (Meta row_var)) free_field_type_vars
     | Absent -> S.empty
-    | Present (t, n) -> free_type_vars' rec_vars t
+    | Present (t, _n) -> free_type_vars' rec_vars t
     | Input (t, s) | Output (t, s) -> S.union (free_type_vars' rec_vars t) (free_type_vars' rec_vars s)
     | Select fields | Choice fields -> free_row_type_vars' rec_vars fields
     | Dual s -> free_type_vars' rec_vars s
@@ -1765,7 +1765,7 @@ let is_tuple ?(allow_onetuples=false) row =
 let extract_tuple = function
   | Row (field_env, _, _) ->
      FieldEnv.to_list (fun _ -> function
-         | Present (t, n) -> t
+         | Present (t, _n) -> t
          | Absent | Meta _ -> assert false
          | _ -> raise tag_expectation_mismatch) field_env
   | _ -> raise tag_expectation_mismatch
@@ -1922,7 +1922,7 @@ struct
        let row_var = free_bound_row_var_vars bound_vars row_var in
        field_type_vars @ row_var
     (* Presence *)
-    | Present (t, n) -> free_bound_type_vars bound_vars t
+    | Present (t, _n) -> free_bound_type_vars bound_vars t
     | Absent -> []
     (* Session *)
     | Input (t, s) | Output (t, s) ->
@@ -2458,7 +2458,7 @@ struct
           FieldEnv.fold
             (fun i f tuple_env ->
                match f with
-                 | Present (t, n)        -> IntMap.add (int_of_string i) t tuple_env
+                 | Present (t, _n)        -> IntMap.add (int_of_string i) t tuple_env
                  | (Absent | Meta _) -> assert false
                  | _ -> raise tag_expectation_mismatch)
             field_env
@@ -2608,13 +2608,13 @@ struct
          | Function (args, effects, t) ->
             let ht fields =
               match FieldEnv.find hear fields with
-              | Present (t, n) -> sd t
+              | Present (t, _n) -> sd t
               | _          -> assert false in
             ppr_function_type args effects t ">" ht
          | Lolli    (args, effects, t) ->
             let ht fields =
               sd (match FieldEnv.find hear fields with
-                  | Present (t, n) -> t
+                  | Present (t, _n) -> t
                   | _          -> assert false)
             in ppr_function_type args effects t "@" ht
          | Record r ->
@@ -2689,7 +2689,7 @@ struct
          | Dual s -> "~" ^ sd s
          | End -> "End"
   and presence ({ bound_vars; _ } as context) ((policy, vars) as p) = function
-      | Present (t, n) ->
+      | Present (t, _n) ->
         begin
           match concrete_type t with
           | Record row when is_empty_row row -> ""
@@ -3776,7 +3776,7 @@ module RoundtripPrinter : PRETTY_PRINTER = struct
           (match tp with
            | Absent ->
               StringBuffer.write buf "-"
-           | Present (tp, n) ->
+           | Present (tp, _n) ->
               (* Nullary variant payloads do not get printed. *)
               let is_nullary = concrete_type tp = unit_type in
               let inside_variant =
@@ -4118,7 +4118,7 @@ module RoundtripPrinter : PRETTY_PRINTER = struct
               -> with_value alias_recapp (name, arg_kinds, arg_types, is_dual)
 
             | Meta pt            -> meta ctx pt
-            | Present (t, n)     -> with_value presence t
+            | Present (t, _n)    -> with_value presence t
             | Absent             -> constant "-"
             | Primitive t        -> with_value primitive t
 
@@ -4507,7 +4507,7 @@ let make_fresh_envs : datatype -> datatype IntMap.t * row IntMap.t * field_spec 
          | row -> make_env boundvars row
        in
        union [field_vars; row_vars]
-    | Present (t, n) -> make_env boundvars t
+    | Present (t, _n) -> make_env boundvars t
     | Absent -> empties
     | Input (t, s) | Output (t, s) -> union [make_env boundvars t; make_env boundvars s]
     | Select row | Choice row    -> make_env boundvars row
@@ -4620,10 +4620,10 @@ let is_sub_type, is_sub_row =
        let sub_fields =
          FieldEnv.fold (fun name f _ ->
              match f with
-             | Present (t, n) ->
+             | Present (t, _n) ->
                 if FieldEnv.mem name rfield_env then
                   match FieldEnv.find name rfield_env with
-                  | Present (t', n) ->
+                  | Present (t', _n) ->
                      (is_sub_type rec_vars (t, t') &&
                         is_sub_type rec_vars (t', t))
                   | Absent
@@ -4653,10 +4653,10 @@ let is_sub_type, is_sub_row =
       let sub_fields =
         FieldEnv.fold (fun name f _ ->
                          match f with
-                           | Present (t, n) ->
+                           | Present (t, _n) ->
                                if FieldEnv.mem name rfield_env then
                                  match FieldEnv.find name rfield_env with
-                                   | Present (t', n) ->
+                                   | Present (t', _n) ->
                                        is_sub_type rec_vars (t, t')
                                    | Absent | Meta _ -> false
                                    | _ -> raise tag_expectation_mismatch

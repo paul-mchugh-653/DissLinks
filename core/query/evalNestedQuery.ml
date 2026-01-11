@@ -98,7 +98,7 @@ struct
         let (fields, _, _) = TypeUtils.extract_row_parts row in
         `Record (StringMap.map
           (function
-             | Present (t, n) -> nested_type_of_type t
+             | Present (t, _n) -> nested_type_of_type t
              | _ -> assert false) fields)
     | Types.Application (l, [(primary_kind, t)]) when l = Types.list ->
        assert (primary_kind = PrimaryKind.Type);

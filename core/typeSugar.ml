@@ -4312,7 +4312,7 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                            let kname = Binder.to_name bndr in
                            let kt =
                              let (fields,_,_) = TypeUtils.extract_row_parts (TypeUtils.extract_row effrow) in
-                             let (kt, n) = find_effect_type effname (StringMap.to_alist fields) in
+                             let (kt, _n) = find_effect_type effname (StringMap.to_alist fields) in
                              let op_param = TypeUtils.return_type kt in
                              let typ = Env.find kname env in
                              let domain =
@@ -4531,7 +4531,7 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                 else
                   let t =
                     match lookup_effect context name with
-                    | Some (t, n) -> t
+                    | Some (t, _n) -> t
                     | None   -> Types.fresh_type_variable (op_linearity, res_any)
                   in
                   (Operation name, t, Usage.empty)

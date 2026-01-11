@@ -175,9 +175,9 @@ let rec eq_types : (datatype * datatype) -> bool =
          | _ -> assert false
          end
       (* Presence *)
-      | Present (l, nl) ->
+      | Present (l, _nl) ->
          begin match unalias t2 with
-         | Present (r, nr) -> eq_types (l, r)
+         | Present (r, _nr) -> eq_types (l, r)
          | _ -> false
          end
       | Absent ->
@@ -727,7 +727,7 @@ let rec unify' : unify_env -> (datatype * datatype) -> unit =
 and unify_presence' : unify_env -> (field_spec * field_spec -> unit) =
   fun rec_env (l, r) ->
   match l, r with
-  | Present (lt, ln), Present (rt, rn) -> unify' rec_env (lt, rt)
+  | Present (lt, _ln), Present (rt, _rn) -> unify' rec_env (lt, rt)
   | Absent, Absent -> ()
   | Present _, Absent
   | Absent, Present _ ->

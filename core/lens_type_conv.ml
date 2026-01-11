@@ -54,7 +54,7 @@ let rec lens_phrase_type_of_type t =
         |> String.Map.from_alist
         |> String.Map.map (fun v ->
                match v with
-               | T.Present (t, n) -> lens_phrase_type_of_type t
+               | T.Present (t, _n) -> lens_phrase_type_of_type t
                | _ ->
                    failwith
                      "lens_phrase_type_of_type only works on records with \

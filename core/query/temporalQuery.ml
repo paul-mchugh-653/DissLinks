@@ -70,7 +70,7 @@ module TransactionTime = struct
     let open Sql in
     let now_const = Constant.DateTime.now () in
     let sql_now = Constant now_const in
-    let is_current = Apply ("==", [Project (tbl_var, tt_to); sql_forever]) in
+    let is_current = Apply ("==", [Project (tbl_var, tt_to, false); sql_forever]) in
 
     (* Begin by constructing a select query, which gets our affected rows. *)
 
@@ -100,7 +100,7 @@ module TransactionTime = struct
     let select_fields =
       StringMap.mapi (fun k _ ->
         OptionUtils.opt_map (base []) (StringMap.lookup k record_fields)
-        |> OptionUtils.from_option (Project (tbl_var, k))) table_types
+        |> OptionUtils.from_option (Project (tbl_var, k, false))) table_types
       |> StringMap.to_alist
       (* Need to swap (col, val) pairs to (val, col) to fit select_clause AST,
        * which mirrors "SELECT V as K" form in SQL *)
@@ -132,7 +132,7 @@ module TransactionTime = struct
     let fields_neq =
       let fields_eq =
         List.fold_left (fun acc (label, v) ->
-          let proj = Project (tbl_var, label) in
+          let proj = Project (tbl_var, label, false) in
           let eq = Apply ("==", [proj; base [] v]) in
           Apply ("&&", [eq; acc])) const_true record_fields_list in
       Apply ("not", [fields_eq]) in
@@ -168,7 +168,7 @@ module TransactionTime = struct
     fun ((tbl_var, table), where) tt_to ->
       let now = Sql.Constant (Constant.DateTime.now ()) in
       let open Sql in
-      let is_current =  Apply ("==", [Project (tbl_var, tt_to); sql_forever]) in
+      let is_current =  Apply ("==", [Project (tbl_var, tt_to, false); sql_forever]) in
 
       (* where x --> where (x && is_current) *)
       let upd_where =
@@ -298,7 +298,7 @@ module ValidTime = struct
         let open OpHelpers in
         let now_const = Constant.DateTime.now () in
         let sql_now = Constant now_const in
-        let sql_proj field = Project (tbl_var, field) in
+        let sql_proj field = Project (tbl_var, field, false) in
         let current_now =
           current_at (sql_proj from_field) (sql_proj to_field) sql_now in
 
@@ -322,7 +322,7 @@ module ValidTime = struct
         let select_fields =
           StringMap.mapi (fun k _ ->
             OptionUtils.opt_map (base []) (StringMap.lookup k fields_with_time)
-            |> OptionUtils.from_option (Project (tbl_var, k))) table_types
+            |> OptionUtils.from_option (Project (tbl_var, k, false))) table_types
           |> StringMap.to_alist
           (* Need to swap (col, val) pairs to (val, col) to fit select_clause AST,
            * which mirrors "SELECT V as K" form in SQL *)
@@ -432,7 +432,7 @@ module ValidTime = struct
               | Some where -> op_and (base [] where) pred
               | None -> pred in
 
-          let proj field = Project (tbl_var, field) in
+          let proj field = Project (tbl_var, field, false) in
 
           (* 2x Selections *)
           (*  - Select either the field name if unspecified, or the updated value
@@ -442,7 +442,7 @@ module ValidTime = struct
             let fields =
               StringMap.mapi (fun k _ ->
                 StringMap.lookup k values
-                |> OptionUtils.from_option (Project (tbl_var, k))) table_types
+                |> OptionUtils.from_option (Project (tbl_var, k, false))) table_types
               |> StringMap.to_alist
               (* Need to swap (col, val) pairs to (val, col) to fit select_clause AST,
                * which mirrors "SELECT V as K" form in SQL *)
@@ -549,7 +549,7 @@ module ValidTime = struct
         let open OpHelpers in
         let now_const = Constant.DateTime.now () in
         let sql_now = Constant now_const in
-        let sql_proj field = Project (tbl_var, field) in
+        let sql_proj field = Project (tbl_var, field, false) in
         let current_now =
           current_at (sql_proj from_field) (sql_proj to_field) sql_now
         in
@@ -593,7 +593,7 @@ module ValidTime = struct
           let open Sql in
           let app_from = base [] app_from in
           let app_to = base [] app_to in
-          let proj k = Sql.Project (tbl_var, k) in
+          let proj k = Sql.Project (tbl_var, k, false) in
           let and_where pred =
             match where with
               | Some where -> op_and (base [] where) pred

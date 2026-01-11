@@ -732,7 +732,7 @@ let rec select_clause : Sql.index -> bool -> t -> Sql.select_clause =
           (List.rev
             (StringMap.fold
               (fun name _ fields ->
-                (Sql.Project (var, name), name)::fields)
+                (Sql.Project (var, name, false), name)::fields)
               fields
               []))
       in
@@ -784,8 +784,25 @@ and base : Sql.index -> t -> Sql.base = fun index ->
         Sql.Length (unit_query v)
     | Apply (Primitive f, vs) ->
         Sql.Apply (f, List.map (base index) vs)
-    | Project (Var (x, _tyx), name) ->
-        Sql.Project (x, name)
+    | Project (Var (x, tyx), name) ->
+                begin
+                    match tyx with 
+                        | Types.Record _ as rty ->
+                                        let projected_type = StringMap.find name (recdty_field_types rty) in
+                                                begin
+                                                        match projected_type with
+                                                                | Types.Variant row -> Sql.Project (x, name, true)
+                                                                | _ -> Sql.Project (x, name, false)
+                                                end
+                        | ty ->
+                                        failwith
+                                                (Format.asprintf ("term:\n" ^^
+                                                "%s\n" ^^
+                                                "has type:\n" ^^
+                                                "%a\n" ^^
+                                                "but it was expected to have a record type.")
+                                                (string_of_t (Var (x, tyx))) Types.pp_datatype ty)
+                end
     | Constant c -> Sql.Constant c
     | Primitive "index" ->
         (* This is the only place the index parameter is ever materially used. *)
