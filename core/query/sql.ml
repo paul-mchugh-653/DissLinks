@@ -351,10 +351,13 @@ class virtual printer =
         Format.fprintf ppf "%s.%s" (string_of_table_var var) (self#quote_field label)
 
   method pp_projection_nullable one_table ppf (var, label) =
-      if one_table then
-        Format.pp_print_string ppf ("IF(" ^ (self#quote_field label) ^ " IS NULL, 'Nothing', 'Just')")
-      else
+      let print_projection ppf () =
         Format.fprintf ppf "%s.%s" (string_of_table_var var) (self#quote_field label)
+      in 
+      if one_table then
+        Format.fprintf ppf "IF( %s IS NULL, '_Nothing', CONCAT('_Just(', %a, ')' )" (self#quote_field label) print_projection ()
+      else
+        print_projection ppf ()
 
   method pp_base one_table ppf b =
     let pr_b_one_table = self#pp_base one_table in
