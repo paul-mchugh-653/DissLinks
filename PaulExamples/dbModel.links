@@ -1,8 +1,0 @@
-import MvuAttrs;
-import MvuHTML;
-import MvuCommands;
-import Mvu;
-
-var db = database "linkslearn";
-
-typename

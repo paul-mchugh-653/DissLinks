@@ -1,0 +1,16 @@
+var db = database "linkstry";
+
+var people = table "people" with (name: nullable String, age: nullable Int) from db;
+
+fun main() {
+
+query{
+
+	for (p <-- people)
+	[p]
+
+}
+
+}
+
+main()
