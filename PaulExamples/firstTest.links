@@ -1,6 +1,6 @@
 var db = database "linkstry";
 
-var people = table "people" with (name: nullable String, age: nullable Int) from db;
+var people = table "people" with (name: String, age: nullable Int) from db;
 
 fun main() {
 

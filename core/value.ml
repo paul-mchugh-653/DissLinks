@@ -791,6 +791,7 @@ let rec p_value (ppf : formatter) : t -> 'a = function
   | `ClientClosure _
   | `ClientFunction _ -> fprintf ppf "fun"
   | `PrimitiveFunction (name, _op) -> fprintf ppf "%s" name
+  | `Variant ("Nothing", _) -> fprintf ppf "NULL"
   | `Variant (label, `Record []) -> fprintf ppf "@{<constructor>%s@}" label
   (* avoid duplicate parenthesis for Foo(a = 5, b = 3) *)
   | `Variant (label, (`Record _ as value)) -> fprintf ppf "@{<constructor>%s@}@[%a@]" label p_value value

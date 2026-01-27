@@ -52,25 +52,9 @@ let get_variant_type t =
                    end
     | _ -> t
 
-let get_value_from_option v t  =
-  match t with
-    | Types.Variant _ ->
-                        if (String.equal v "_Nothing") then
-                                (* work out what goes here, implicit null? *)
-                                begin
-                                        match get_variant_type t with
-                                          | Types.Primitive Primitive.Int -> "0"
-                                          | Types.Primitive Primitive.String -> "null"
-                                          | _ -> "also null"
-                                end
-                        else
-                                let string_length = String.length v in
-                                Debug.print (String.sub v 6 (string_length - 7));
-                                        String.sub v 6 (string_length - 7)
-    | _ -> v
+
 
 let rec value_of_db_string (value:string) t =
-  let value = (get_value_from_option value t) in
   match TypeUtils.concrete_type t with
     | Types.Primitive Primitive.Bool ->
         (* HACK:
@@ -104,24 +88,14 @@ let rec value_of_db_string (value:string) t =
        else Value.box_float (float_of_string value)
     | Types.Primitive Primitive.DateTime ->
        Value.box_datetime (Timestamp.parse_db_string value)
-    | Types.Variant v -> 
+    | Types.Variant _ -> 
                         if (String.equal value "_Nothing") then
-                                Types.make_variant_type (Utility.StringMap.of_list[("Nothing", Types.make_empty_closed_row () )])
+                                Value.box_variant "Nothing" (Value.box_string "")
                         else
-                                begin
-                                match v with
-                                  | Types.Row (fields, _, _) -> 
-                                        let present_t = (StringMap.find "Just" fields) in
-                                        let string_length = String.length v in 
-                                        let unwrapped_val = (String.sub v 6 (string_length - 7)) in
-                                        begin
-                                        match present_t with
-                                          | Types.Present (vt, _) -> 
-                                                          Types.make_variant_type (Utility.StringMap.of_list[("Just", (value_of_db_string unwrapped_val vt  ) )])
-                                          | _ -> t
-                                        end
-                                  | _ -> t
-                                end
+                                let string_length = String.length value in
+                                let unwrapped_string = String.sub value 6 (string_length -7) in
+                                Debug.print ("Unwrapped String: "  ^ unwrapped_string);
+                                        Value.box_variant "Just" (value_of_db_string unwrapped_string (get_variant_type t)) 
     | t -> raise (runtime_error
       ("value_of_db_string: unsupported datatype: '" ^
         Types.string_of_datatype t ^"'"))
