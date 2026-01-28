@@ -1,6 +1,6 @@
 var db = database "linkslearn";
 
-var comedians = table "comedians" with (id: Int, firstname: String, lastname: String, salary: Float, hometown: String) from db;
+var comedians = table "comedians" with (id: Int, firstname: String, lastname: String, salary: nullable Float, hometown: String) from db;
 
 fun main(){
 

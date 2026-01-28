@@ -791,7 +791,7 @@ and base : Sql.index -> t -> Sql.base = fun index ->
                                         let projected_type = StringMap.find name (recdty_field_types rty) in
                                                 begin
                                                         match projected_type with
-                                                                | Types.Variant row -> Sql.Project (x, name, true)
+                                                                | Types.Variant _ -> Sql.Project (x, name, true)
                                                                 | _ -> Sql.Project (x, name, false)
                                                 end
                         | ty ->
