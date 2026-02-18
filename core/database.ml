@@ -45,7 +45,7 @@ let get_variant_type t =
                                       let present_t = (StringMap.find "Just" x) in
                                         begin
                                         match present_t with
-                                          | Types.Present (actual_t, _) -> actual_t
+                                          | Types.Present actual_t -> actual_t
                                           | _ -> t
                                         end
                       | _ -> t
@@ -94,7 +94,6 @@ let rec value_of_db_string (value:string) t =
                         else
                                 let string_length = String.length value in
                                 let unwrapped_string = String.sub value 6 (string_length -7) in
-                                Debug.print ("Unwrapped String: "  ^ unwrapped_string);
                                         Value.box_variant "Just" (value_of_db_string unwrapped_string (get_variant_type t)) 
     | t -> raise (runtime_error
       ("value_of_db_string: unsupported datatype: '" ^
@@ -138,6 +137,7 @@ let is_null name = (name = "null")
 
 let result_signature field_types result =
     let n = result#nfields in
+    let _ = Debug.print ("Number of fields: " ^ string_of_int n) in
     let rec rs i =
       if i >= n then
         [],true
@@ -152,6 +152,7 @@ let result_signature field_types result =
             null_query
           else if List.mem_assoc name field_types then
             let fields,null_query = rs (i+1) in
+            let _ = Debug.print ("Hmmm " ^ ( Types.string_of_datatype (List.assoc name field_types))) in
             (name, (List.assoc name field_types, i)) :: fields,
             null_query && is_null(name)
           else
@@ -172,7 +173,8 @@ let result_signature field_types result =
       | [] -> l
       | (name,(t,i))::rs' ->
                       Debug.print ("in build record: " ^ (Types.string_of_datatype t) );
-      build rs' ((name,value_of_db_string (row i) t)::l)
+                      Debug.print ("Also in build record: " ^ (row i));
+      build rs' (((name),value_of_db_string (row i) t)::l)
     in build rs []
 
 

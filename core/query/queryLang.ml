@@ -184,11 +184,7 @@ let rec expression_of_base_value : Value.t -> t = function
 
 let field_types_of_spec_map =
         StringMap.map (function
-          | Types.Present (t, nullable) -> 
-                          if nullable then
-                                  Types.make_variant_type (Utility.StringMap.of_list[("Just", t); ("Nothing", Types.make_empty_closed_row ())])
-                          else
-                                  t
+          | Types.Present t -> t
           | _ -> assert false)
 
 (*  *)
@@ -333,10 +329,11 @@ let rec occurs_free_gens (gs : (genkind * Var.var * t) list) q =
 let rec type_of_expression : t -> Types.datatype = fun v ->
   let te = type_of_expression in
   let record fields : Types.datatype =
+  let _ = Debug.print ("Thing in queryLang:" ^ Types.string_of_datatype (Types.make_record_type (StringMap.map te fields))) in
     Types.make_record_type (StringMap.map te fields)
   in
   match v with
-  | Var (_,ty) -> ty
+  | Var (_,ty) -> let _ = Debug.print ("In Var in QueryLang: " ^ Types.string_of_datatype ty) in ty
   | Concat [] -> Types.make_list_type(Types.unit_type)
   | Concat (v::_) -> te v
   | For (_, _, _os, body) -> te body
@@ -361,7 +358,7 @@ let rec type_of_expression : t -> Types.datatype = fun v ->
       Types.make_mapentry_type tyk tyv
   | Record fields -> record fields
   | If (_, t, _) -> te t
-  | Table Value.Table.{ row; _ } -> Types.make_list_type (Types.Record (Types.Row row))
+  | Table Value.Table.{ row; _ } -> let _ = Debug.print ("In table in queryLang: " ^ (Types.string_of_datatype (Types.Record (Types.Row row)))) in Types.make_list_type (Types.Record (Types.Row row))
   | Dedup u
   | Prom u -> te u
   | Constant (Constant.Bool   _) -> Types.bool_type
@@ -374,7 +371,10 @@ let rec type_of_expression : t -> Types.datatype = fun v ->
       begin
         match te w with
         | Types.Record _ as rty -> 
-                StringMap.find name (recdty_field_types rty)
+                        let x = StringMap.find name (recdty_field_types rty) in
+                        let _ = Debug.print ("Projecting datatype in queryLang: " ^  (Types.string_of_datatype x)) in
+                        let _ = Debug.print ("Name in queryLang: " ^ name) in
+                        x
         | ty ->
             failwith
               (Format.asprintf ("term:\n" ^^
@@ -731,8 +731,8 @@ let rec select_clause : Sql.index -> bool -> t -> Sql.select_clause =
         Sql.Fields
           (List.rev
             (StringMap.fold
-              (fun name _ fields ->
-                (Sql.Project (var, name, false), name)::fields)
+              (fun name _ fields -> 
+                (Sql.Project (var, name, true), name)::fields)
               fields
               []))
       in
@@ -785,10 +785,12 @@ and base : Sql.index -> t -> Sql.base = fun index ->
     | Apply (Primitive f, vs) ->
         Sql.Apply (f, List.map (base index) vs)
     | Project (Var (x, tyx), name) ->
+                let _ = Debug.print ("\n Here in Project in queryLang the type is: " ^ Types.string_of_datatype tyx) in
                 begin
                     match tyx with 
                         | Types.Record _ as rty ->
                                         let projected_type = StringMap.find name (recdty_field_types rty) in
+                                        let _ = Debug.print ("In Projecting querylang: " ^ (Types.string_of_datatype projected_type)) in
                                                 begin
                                                         match projected_type with
                                                                 | Types.Variant _ -> Sql.Project (x, name, true)
@@ -1057,7 +1059,7 @@ struct
            match flatten_base_type t with
              | Types.Record inner_fields ->
                StringMap.fold
-                 (fun name' t fields ->
+                 (fun name' t fields -> 
                    StringMap.add (name ^ "@" ^ name') t fields)
                  (field_types_of_row inner_fields)
                  fields
@@ -1074,6 +1076,7 @@ struct
 
   let flatten_query_type t =
     let t' = Types.unwrap_list_type t |> flatten_base_type in
+    let _ = Debug.print ("Right, in flatten_query_type: \n" ^ (Types.string_of_datatype t)) in
     match t' with
     | Types.Record _ -> Types.make_list_type t'
     | _ -> StringMap.add "@" t' StringMap.empty |> Types.make_record_type |> Types.make_list_type

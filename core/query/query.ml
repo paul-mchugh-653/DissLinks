@@ -175,18 +175,19 @@ let rec reduce_for_source : Q.t * (Q.t -> Q.t) -> Q.t =
                 | Current ->
                   let x = Var.fresh_raw_var () in
                   let ty_elem = Types.Record (Types.Row row) in
+                  let _ = Debug.print ("In query temporality: " ^ (Types.string_of_datatype ty_elem)) in
+                  let _ = Debug.print ("Row in query temporality: " ^ (Types.string_of_datatype (Types.Row row))) in
                     reduce_for_body ([(Q.Entries, x, source)], [], body (Q.Var (x, ty_elem)))
                 | Temporality.Transaction | Temporality.Valid ->
                   let (from_field, to_field) = OptionUtils.val_of temporal_fields in
                   (* Transaction / Valid-time tables: Need to wrap as metadata *)
                   (* First, generate a fresh variable for the table *)
-                  let make_spec_map = StringMap.map (fun x -> Types.Present (x, false)) in
+                  let make_spec_map = StringMap.map (fun x -> Types.Present x) in
                   let field_types = Q.table_field_types table in
                   let base_field_types =
                     StringMap.filter
                       (fun x _ -> x <> from_field && x <> to_field)
                       field_types in
-
                   let table_raw_var = Var.fresh_raw_var () in
                   let (_, row_var, dual) = row in
                   let ty_elem = Types.(Record (Row (make_spec_map field_types, row_var, dual))) in

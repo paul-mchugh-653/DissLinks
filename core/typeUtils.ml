@@ -37,7 +37,7 @@ let split_row name row =
 let rec variant_at ?(overstep_quantifiers=true) name t = match (concrete_type t, overstep_quantifiers) with
   | (ForAll (_, t), true) -> variant_at name t
   | (Variant row, _) ->
-      let (t, _), _ = split_row name row in t
+      let t, _ = split_row name row in t
   | (t, _) ->
       error ("Attempt to deconstruct non-variant type "^string_of_datatype t)
 
@@ -52,11 +52,7 @@ let rec split_variant_type name t = match concrete_type t with
 let rec project_type ?(overstep_quantifiers=true) name t = match (concrete_type t, overstep_quantifiers) with
   | (ForAll (_, t), true) -> project_type name t
   | (Record row, _) ->
-      let (t, nullable), _ = split_row name row in
-        if nullable then
-                Types.make_variant_type (Utility.StringMap.of_list[("Just", t); ("Nothing", Types.make_empty_closed_row ())])
-        else
-                t
+      let t, _ = split_row name row in t
   | (Application (absty, [PrimaryKind.Type, typ]), _) when
       (Abstype.name absty) = "TransactionTime" || (Abstype.name absty = "ValidTime") ->
         if name = TemporalField.data_field then typ
@@ -366,7 +362,7 @@ let check_type_wellformedness primary_kind t : unit =
        idatatype f; idatatype t;
        pk_type
     (* Presence *)
-    | Present (t, _n) ->
+    | Present t ->
        idatatype t;
        pk_presence
     | Absent -> pk_presence
@@ -408,5 +404,5 @@ let pack_types : Types.datatype list -> Types.datatype = function
   | ts -> Types.make_tuple_type ts
 
 let from_present : Types.field_spec -> Types.datatype = function
-  | Present (t,_n) -> t
+  | Present t -> t
   | _ -> raise Types.tag_expectation_mismatch

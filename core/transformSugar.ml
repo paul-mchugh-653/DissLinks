@@ -24,7 +24,7 @@ let type_section env =
       let (fields, rho, _) = TypeUtils.extract_row_parts row in
       let eb, e = Types.fresh_row_quantifier default_effect_subkind in
 
-      let r = Record (Row (StringMap.add label (Present (a, false)) fields, rho, false)) in
+      let r = Record (Row (StringMap.add label (Present a) fields, rho, false)) in
         ForAll ([ab; rhob; eb],
                 Function (Types.make_tuple_type [r], e, a))
   | Name var -> TyEnv.find var env
@@ -318,7 +318,7 @@ class transform (env : Types.typing_environment) =
             (o, Spawn (k, spawn_loc, body, Some inner_effects), process_type)
       | Sugartypes.Select (l, e) ->
          let (o, e, t) = o#phrase e in
-         let sel_ty, _ = TypeUtils.select_type l t in
+         let sel_ty = TypeUtils.select_type l t in
          (o, Sugartypes.Select (l, e), sel_ty)
       | Offer (e, bs, Some t) ->
           let (o, e, _) = o#phrase e in
@@ -459,6 +459,7 @@ class transform (env : Types.typing_environment) =
             (o, RecordLit (fields, base), t)
       | Projection (e, name) ->
           let (o, e, t) = o#phrase e in
+          let _ = Debug.print ("In transformSugar: " ^ (Types.string_of_datatype t)) in
           (o, Projection (e, name), TypeUtils.project_type name t)
       | With (e, fields) ->
           let (o, e, t) = o#phrase e in
@@ -472,7 +473,7 @@ class transform (env : Types.typing_environment) =
                let  ( fs, rv, closed ) =
                  Types.flatten_row row |> TypeUtils.extract_row_parts
                in
-               let fs = List.fold_left2 (fun fs (name, _) t -> StringMap.add name (Present (t, false)) fs) fs fields ts in
+               let fs = List.fold_left2 (fun fs (name, _) t -> StringMap.add name (Present t) fs) fs fields ts in
                Record (Row (fs, rv, closed))
             | _ -> t
           in

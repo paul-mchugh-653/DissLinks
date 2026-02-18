@@ -43,7 +43,7 @@ object (o : 'self_type)
         let fun_effects =
           if Settings.get Basicsettings.Sessions.exceptions_enabled then
             let ty = Types.make_pure_function_type [] (Types.empty_type) in
-            Types.row_with (Value.session_exception_operation, Types.Present (ty, false)) fun_effects
+            Types.row_with (Value.session_exception_operation, Types.Present ty) fun_effects
           else fun_effects
         in
 
@@ -82,7 +82,7 @@ object (o : 'self_type)
         in
         begin
           match StringMap.find Types.hear fieldenv with
-          | (Types.Present (mbt, _)) ->
+          | (Types.Present mbt) ->
              o#phrasenode
                (Switch (fn_appl "recv" [(Type, mbt); (Row, other_effects)] [],
                         cases,

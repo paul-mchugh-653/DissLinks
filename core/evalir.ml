@@ -787,7 +787,7 @@ struct
                           (fun name t fields ->
                             let open Types in
                             match t with
-                              | Present (t, _n) -> (name, t)::fields
+                              | Present t -> (name, t)::fields
                               | _ -> assert false)
                           fieldMap
                           []
@@ -883,7 +883,7 @@ struct
               let field_types =
                 StringMap.map
                     (function
-                       | Types.Present (t, _n) -> t
+                       | Types.Present t -> t
                        | _ -> assert false) fields
               in
               Lwt.return
@@ -921,7 +921,7 @@ struct
                   let field_types =
                     StringMap.map
                         (function
-                           | Types.Present (t, _n) -> t
+                           | Types.Present t -> t
                            | _ -> assert false) fields
                   in
                   Lwt.return

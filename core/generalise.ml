@@ -88,7 +88,7 @@ let rec get_type_args : gen_kind -> TypeVarSet.t -> datatype -> type_arg list =
         | Closed -> []
         (* Presence *)
         | Absent -> []
-        | Present (t, _n) -> gt t
+        | Present t -> gt t
         (* Session *)
         | Input (t, s)
         | Output (t, s) -> gt t @ gt s

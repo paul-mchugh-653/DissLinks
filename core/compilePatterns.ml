@@ -1001,7 +1001,7 @@ let compile_handle_cases
               let arity = StringMap.size fields in
               if arity = 1 then
                 match StringMap.find "1" fields with
-                | Types.Present (t, _n) -> t
+                | Types.Present t -> t
                 | _ -> assert false
               else
                 domain (* n-ary operation *)
@@ -1011,7 +1011,7 @@ let compile_handle_cases
           let fields'' =
             StringMap.map
               (function
-                | Types.Present (t, _n) ->
+                | Types.Present t ->
                   extract t
                 | _ -> assert false)
               fields'
@@ -1137,7 +1137,7 @@ let match_choices : var -> clause list -> bound_computation =
                                       match pattern with
                                       | Pattern.Variant (name, Pattern.Variable b) -> (name, b)
                                       | Pattern.Variant (name, Pattern.Any)        ->
-                                         let (bt, _bn) = TypeUtils.choice_at name t in
+                                         let bt = TypeUtils.choice_at name t in
                                          let info = Var.make_local_info (bt, "_") in
                                          (name, Var.fresh_binder info)
                                       | _ ->

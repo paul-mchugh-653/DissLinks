@@ -71,7 +71,7 @@ let rec is_guarded : TypeVarSet.t -> StringSet.t -> int -> datatype -> bool =
                          Unionfind.find row_var = Closed) ->
                 begin
                   match FieldEnv.find "1" fields with
-                  | Present (t, _n)   -> isg t
+                  | Present t   -> isg t
                   | (Absent | Var _) -> true
                   | _ -> raise Types.tag_expectation_mismatch
                 end
@@ -102,7 +102,7 @@ let rec is_guarded : TypeVarSet.t -> StringSet.t -> int -> datatype -> bool =
              (is_guarded_row_var check_fields bound_vars expanded_apps var row_var)
         | Closed -> true
         (* Presence *)
-        | Present (t, _n) -> isg t
+        | Present t -> isg t
         | Absent -> true
         (* Session *)
         | Input (t, s)
@@ -184,7 +184,7 @@ let rec is_negative : TypeVarSet.t -> StringSet.t -> int -> datatype -> bool =
            || is_negative_row_var bound_vars expanded_apps var row_var
         | Closed -> false
         (* Presence *)
-        | Present (t, _n) -> isn t
+        | Present t -> isn t
         | Absent -> false
         (* Session *)
         | Input (t, s)
@@ -273,7 +273,7 @@ and is_positive : TypeVarSet.t -> StringSet.t -> int -> datatype -> bool =
            || is_positive_row_var bound_vars expanded_apps var row_var
         | Closed -> false
         (* Presence *)
-        | Present (t, _n) -> isp t
+        | Present t -> isp t
         | Absent -> false
         (* Session *)
         | Input (t, s)

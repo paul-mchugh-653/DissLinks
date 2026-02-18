@@ -107,7 +107,7 @@ module Desugar = struct
         | Tuple ks ->
             let labels = map string_of_int (Utility.fromTo 1 (1 + length ks)) in
             let unit = Types.make_empty_closed_row () in
-            let present (s, x) = (s, Types.Present (x, false))
+            let present (s, x) = (s, Types.Present x)
             in
               Types.Record (fold_right2 (curry (Types.row_with -<- present)) labels (map datatype ks) unit)
         | Record r -> Types.Record (row alias_env r t')
@@ -202,8 +202,8 @@ module Desugar = struct
   and fieldspec alias_env fs _ =
     match fs with
     | Datatype.Absent -> Types.Absent
-    | Datatype.Present t -> Types.Present (datatype alias_env t, false)
-    | Datatype.Nullable t -> Types.Present (datatype alias_env t, true)
+    | Datatype.Present t -> Types.Present (datatype alias_env t)
+    | Datatype.Nullable t -> Types.Present (Types.make_variant_type (Utility.StringMap.of_list[("Just", (datatype alias_env t)); ("Nothing", Types.make_empty_closed_row ())]))
     (* | Var stv when is_anon stv ->
      *    let (_name, sk, freedom) = SugarTypeVar.get_unresolved_exn stv in
      *    `Var (make_anon_point var_env pos sk freedom) *)

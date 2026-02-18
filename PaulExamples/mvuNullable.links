@@ -1,0 +1,94 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+
+
+typename Model = (name: String, age: nullable Int, state: [| NotStarted | Waiting | SelectDone: [(name: String, age: nullable Int)] |]);
+
+typename Message = [| Select | SelectFinished: [(name: String, age: nullable Int)] | Name: String | Age: nullable Int |]; 
+
+var db = database "linkstry";
+var people = table "people" with (name: String, age: nullable Int) from db;
+
+sig unpack : (String, [(name: String, age: nullable Int)]) ~%~> String
+fun unpack(t, l){
+
+	var ageOutput = if (l == []) {
+		""
+	}
+	else {
+		switch(hd(l).age){
+			case Just(x) -> intToString(x)
+			case Nothing -> "No Age"
+		}
+	};
+
+
+	if (l == [])
+		""
+	else
+		hd(l).name ^^ " : " ^^ ageOutput ^^ " | \n" ^^ unpack(t, tl(l))
+
+}
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)
+fun view(model) {
+
+	open MvuAttrs;
+	open MvuHTML;
+
+	var text = 
+	switch(model.state) {
+		case NotStarted -> "Not Started"
+		case Waiting -> "Waiting"
+		case SelectDone(result) -> unpack("", result)
+	};
+
+	div(a0,
+		button(onClick(fun() { Select }),  textNode("Select"))
+	) +*
+	div(a0,
+		textNode(text)
+	)
+
+}
+
+fun selectTry() server {
+
+	query{
+		for (p <-- people)
+			[p]
+	}
+
+}
+
+sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+
+	switch(msg) {
+		case Select -> 
+			var cmd =
+				MvuCommands.spawnProc(fun() { SelectFinished (selectTry()) });
+		((name = model.name, age = model.age, state = Waiting), cmd)
+		case SelectFinished(result) -> ((name = model.name, age = model.age, state = SelectDone(result)), MvuCommands.empty)
+		case Name(n) -> ((name = n, age = model.age, state = model.state), MvuCommands.empty)
+		case Age(a) -> ((name = model.name, age = a, state = model.state), MvuCommands.empty)	
+	}
+
+}
+
+fun mainPage() {
+	Mvu.runCmd("placeholder", (name = "", age = 0, state = NotStarted), view, updt, MvuCommands.empty);
+
+	page
+	<html>
+	<body>
+	<div id="placeholder"></div>
+	</body>
+	</html>
+
+}
+
+serveThis(mainPage)

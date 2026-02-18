@@ -314,6 +314,7 @@ module SugarConstructors (Position : Pos)
         | Some (tmp, fields) ->
             (tmp, Some fields)
     in
+    let _ = Debug.print ("tbl_type: " ^ Sugartypes.Datatype.show (WithPos.node tbl_type)) in
     let tbl_type = (tmp, tbl_type, None) in
     with_pos ppos
     (TableLit {

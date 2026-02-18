@@ -102,7 +102,7 @@ let instantiates : instantiation_maps -> (datatype -> datatype) * (row -> row) *
         | Lens s -> Lens s
         | End -> End
         (* presence stuff*)
-        | Present (t, n) -> Present (inst t, n)
+        | Present t -> Present (inst t)
         | Absent -> Absent
         (* rows *)
         | Row _ as r -> instr r
@@ -132,7 +132,7 @@ let instantiates : instantiation_maps -> (datatype -> datatype) * (row -> row) *
       (fun label f field_env' ->
          let rec add =
            function
-             | Present (t, n) -> StringMap.add label (Present (inst t, n)) field_env'
+             | Present t -> StringMap.add label (Present (inst t)) field_env'
              | Absent ->
                  if is_closed then field_env'
                  else StringMap.add label Absent field_env'

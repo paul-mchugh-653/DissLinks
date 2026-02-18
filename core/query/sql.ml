@@ -403,6 +403,7 @@ class virtual printer =
         | Constant c ->
             Format.pp_print_string ppf (Constant.to_string c)
         | Project (var, label, nullable) ->
+                        let _ = Debug.print (string_of_int var) in
                         if nullable then
                                 self#pp_projection_nullable one_table ppf (var, label)
                         else

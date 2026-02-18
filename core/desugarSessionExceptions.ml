@@ -114,7 +114,7 @@ object (o : 'self_type)
         let inner_effects =
           if Settings.get Basicsettings.Sessions.expose_session_fail then
             effect_row
-            |> Types.row_with (failure_op_name, Types.Present (fail_cont_ty, false))
+            |> Types.row_with (failure_op_name, Types.Present fail_cont_ty)
             |> Types.flatten_row
           else
             effect_row in
@@ -132,7 +132,7 @@ object (o : 'self_type)
         let effect_cases = [otherwise_clause] in
 
         (* Manually construct a row with the two hardwired handler cases. *)
-        let raw_row = Types.row_with ("Return", (Types.Present (try_dt, false))) inner_effects in
+        let raw_row = Types.row_with ("Return", (Types.Present try_dt)) inner_effects in
         (* Dummy types *)
         let types =
           (inner_effects, try_dt, outer_effects, otherwise_dt) in
