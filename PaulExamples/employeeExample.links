@@ -5,7 +5,7 @@ import Mvu;
 
 typename Model = (employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int, state: [| NotStarted | Waiting | SelectDone: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int)] |]);
 
-typename Message = [| Select | SelectFinished: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int)] | EmployeeID: Int | Fname: String | Mname: nullable String | Lname: String | CanDrive: nullable Bool | ManagerID: nullable Int |];
+typename Message = [| Select | SelectFinished: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int)] |];
 
 var db = database "example_company";
 var employees = table "employees" with (employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int) from db;
@@ -19,7 +19,7 @@ fun unpack(t, l){
     else {
         switch(hd(l).mname){
             case Just(x) -> x
-            case Nothing -> ""
+            case Nothing(_) -> ""
         }
     };
 
@@ -29,7 +29,7 @@ fun unpack(t, l){
     else {
         switch(hd(l).candrive){
             case Just(x) -> (if (x){"Can Drive"} else {"Cannot drive"})
-            case Nothing -> "Driving ability unknown"
+            case Nothing(_) -> "Driving ability unknown"
         }
     };
 
@@ -39,7 +39,7 @@ fun unpack(t, l){
     else {
         switch(hd(l).managerid){
             case Just(x) -> intToString(x)
-            case Nothing -> "No Manager"
+            case Nothing(_) -> "No Manager"
         }
     };
 
@@ -88,13 +88,13 @@ fun updt(msg, model) {
         case Select ->
             var cmd = MvuCommands.spawnProc(fun() { SelectFinished(selectTry())});
             ((employeeid = model.employeeid, fname = model.fname, mname = model.mname, lname = model.lname, candrive = model.candrive, managerid = model.managerid, state = Waiting), cmd)
-            case SelectFinished(result) -> ((data with state = SelectDone(result)), MvuCommands.empty)
+        case SelectFinished(result) -> ((model with state = SelectDone(result)), MvuCommands.empty)
     }
 
 }
 
 fun mainPage() {
-	Mvu.runCmd("placeholder", (employeeid = 0, fname = "", mname = "", lname = "", candrive = false, managerid = 0, state = NotStarted), view, updt, MvuCommands.empty);
+	Mvu.runCmd("placeholder", (employeeid = 0, fname = "", mname = Just(""), lname = "", candrive = Just(false), managerid = Just(0), state = NotStarted), view, updt, MvuCommands.empty);
 
 	page
 	<html>

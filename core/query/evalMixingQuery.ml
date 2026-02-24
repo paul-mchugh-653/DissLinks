@@ -206,7 +206,7 @@ let compile_mixing : delateralize:QueryPolicy.t -> Value.env -> (int * int) opti
           <| rowv
           <| row
         in
-        Types.make_record_type' row
+        Types.make_record_type row
       with _ -> t_flat
     in
     let q = sql_of_query v_flat in

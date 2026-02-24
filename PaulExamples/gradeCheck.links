@@ -20,14 +20,14 @@ fun unpack(t, l){
     else {
         switch(hd(l).grade){
             case Just(x) -> x
-            case Nothing -> "Grade Pending"
+            case Nothing(_) -> "Grade Pending"
         }
     };
 
     if (l == [])
         ""
     else 
-        "Course: " ^^ hd(l).course ^^ " | Grade: " ^^ gradeOutput ^^ "\n" ^^ unpack(t, tl(l))        
+        "Course: " ^^ hd(l).course ^^ " | Grade: " ^^ gradeOutput ^^ " \n " ^^ unpack(t, tl(l))        
         
 
 }
@@ -67,15 +67,15 @@ fun updt(msg, model) {
     switch(msg) {
         case Select ->
             var cmd = MvuCommands.spawnProc(fun() { SelectFinished(selectTry()) });
-        ((course = model.course, grade = model.course, state = Waiting), cmd)
-        case SelectFinished(result) -> ((course = model.course, grade = course.grade, state = SelectDone(result)), MvuCommands.empty)
+        ((course = model.course, grade = model.grade, state = Waiting), cmd)
+        case SelectFinished(result) -> ((course = model.course, grade = model.grade, state = SelectDone(result)), MvuCommands.empty)
         case Course(c) -> ((course = c, grade = model.grade, state = model.state), MvuCommands.empty)
         case Grade(g) -> ((course = model.course, grade = model.grade, state = model.state), MvuCommands.empty)
     }
 }
 
 fun mainPage() {
-	Mvu.runCmd("placeholder", (course = "", grade = "", state = NotStarted), view, updt, MvuCommands.empty);
+	Mvu.runCmd("placeholder", (course = "", grade = Just(""), state = NotStarted), view, updt, MvuCommands.empty);
 
 	page
 	<html>

@@ -5,9 +5,9 @@ import Mvu;
 
 
 
-typename Model = (name: String, age: nullable Int, state: [| NotStarted | Waiting | SelectDone: [(name: String, age: nullable Int)] |]);
+typename Model = (name: String, age: nullable Int, state: [| NotStarted | Waiting | SelectDone: [(name: String, age: nullable Int)] | DeleteDone:() |]);
 
-typename Message = [| Select | SelectFinished: [(name: String, age: nullable Int)] | Name: String | Age: nullable Int |]; 
+typename Message = [| Select | SelectFinished: [(name: String, age: nullable Int)] | Name: String | Age: nullable Int | Delete | DeleteFinished |]; 
 
 var db = database "linkstry";
 var people = table "people" with (name: String, age: nullable Int) from db;
@@ -21,7 +21,7 @@ fun unpack(t, l){
 	else {
 		switch(hd(l).age){
 			case Just(x) -> intToString(x)
-			case Nothing -> "No Age"
+			case Nothing(_) -> "No Age"
 		}
 	};
 
@@ -44,11 +44,15 @@ fun view(model) {
 		case NotStarted -> "Not Started"
 		case Waiting -> "Waiting"
 		case SelectDone(result) -> unpack("", result)
+		case DeleteDone -> "Deleted"
 	};
 
 	div(a0,
 		button(onClick(fun() { Select }),  textNode("Select"))
 	) +*
+	div(a0,
+                button(onClick(fun() { Delete }),  textNode("Delete"))
+        ) +*
 	div(a0,
 		textNode(text)
 	)
@@ -64,6 +68,27 @@ fun selectTry() server {
 
 }
 
+fun deleteTry() server {
+
+	delete (p <-- people) where (switch(p.age){
+		case Just(_) -> false
+		case Nothing(_) -> true
+	})
+
+}
+
+
+
+fun selectConditionTry() server {
+
+        query{
+                for (p <-- people)
+                        [p]
+        }
+
+}
+
+
 sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
 fun updt(msg, model) {
 
@@ -73,6 +98,11 @@ fun updt(msg, model) {
 				MvuCommands.spawnProc(fun() { SelectFinished (selectTry()) });
 		((name = model.name, age = model.age, state = Waiting), cmd)
 		case SelectFinished(result) -> ((name = model.name, age = model.age, state = SelectDone(result)), MvuCommands.empty)
+		case Delete ->
+			var cmd = 
+				MvuCommands.spawnProc(fun() { DeleteFinished (deleteTry()) });
+		((name = model.name, age = model.age, state = Waiting), cmd)
+		case DeleteFinished -> ((name = model.name, age = model.age, state = DeleteDone), MvuCommands.empty)
 		case Name(n) -> ((name = n, age = model.age, state = model.state), MvuCommands.empty)
 		case Age(a) -> ((name = model.name, age = a, state = model.state), MvuCommands.empty)	
 	}
@@ -80,7 +110,7 @@ fun updt(msg, model) {
 }
 
 fun mainPage() {
-	Mvu.runCmd("placeholder", (name = "", age = 0, state = NotStarted), view, updt, MvuCommands.empty);
+	Mvu.runCmd("placeholder", (name = "", age = Just(0), state = NotStarted), view, updt, MvuCommands.empty);
 
 	page
 	<html>

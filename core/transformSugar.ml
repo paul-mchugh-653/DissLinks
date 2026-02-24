@@ -459,7 +459,6 @@ class transform (env : Types.typing_environment) =
             (o, RecordLit (fields, base), t)
       | Projection (e, name) ->
           let (o, e, t) = o#phrase e in
-          let _ = Debug.print ("In transformSugar: " ^ (Types.string_of_datatype t)) in
           (o, Projection (e, name), TypeUtils.project_type name t)
       | With (e, fields) ->
           let (o, e, t) = o#phrase e in

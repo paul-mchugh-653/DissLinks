@@ -1055,7 +1055,7 @@ struct
   | Types.Record fields ->
     Types.make_record_type
       (StringMap.fold
-         (fun name (t) fields ->
+         (fun name t fields ->
            match flatten_base_type t with
              | Types.Record inner_fields ->
                StringMap.fold

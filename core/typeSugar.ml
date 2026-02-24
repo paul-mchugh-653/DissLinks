@@ -513,7 +513,7 @@ end
 
     let fixed_type pos thing t l =
       let ppr_t = show_type t in
-      with_but pos (thing ^ " must have type " ^ code ppr_t) l
+      with_but pos (thing ^ " must have tyyyype " ^ code ppr_t) l
 
     let if_condition ~pos ~t1:l ~t2:(_,t) ~error:_ =
       fixed_type pos ("The condition of an " ^ code "if (...) ... else ..." ^
@@ -1163,7 +1163,7 @@ end
 
     let iteration_table_body ~pos ~t1:l ~t2:(_,t) ~error:_ =
       build_tyvar_names [snd l; t];
-      fixed_type pos "The body of a table generator" t l
+      fixed_type pos "The booooody of a table generator" t l
 
     let iteration_table_pattern tmp ~pos ~t1:l ~t2:(rexpr,rt) ~error:_ =
       build_tyvar_names [snd l; rt];
@@ -4994,7 +4994,7 @@ and type_binding : context -> binding -> binding * context * Usage.t =
                  let pats = List.append (List.map (List.map tpcu) pats_init)
                               [List.map tpc pats_tail] in
                  let t_ann = match def with
-                   | Some ty -> Some ty
+                   | Some (ty, _) -> Some ty
                    | None -> resolve_type_annotation bndr t_ann'
                  in
                  let inner =
@@ -5380,7 +5380,7 @@ and type_cp (context : context) = fun {node = p; pos} ->
        let c = Binder.to_name bndr in
        let (_, t, _) = type_check context (var c) in
        let s = Types.fresh_session_variable lin_any in
-       let r = Types.make_singleton_open_row (label, T.Present (s, true)) (lin_any, res_session) in
+       let r = Types.make_singleton_open_row (label, T.Present s) (lin_any, res_session) in
        let ctype = T.Select r in
        unify ~pos:pos ~handle:(Gripers.cp_select c)
              (t, ctype);
@@ -5397,7 +5397,7 @@ and type_cp (context : context) = fun {node = p; pos} ->
         *)
        let check_branch (label, body) =
          let s = Types.fresh_type_variable (lin_any, res_session) in
-         let r = Types.make_singleton_open_row (label, T.Present (s, false)) (lin_any, res_session) in
+         let r = Types.make_singleton_open_row (label, T.Present s) (lin_any, res_session) in
          unify ~pos:pos ~handle:(Gripers.cp_offer_choice c) (t, T.Choice r);
          let (p, t, u) = with_channel c s (type_cp (bind_var context (c, s)) body) in
          (label, p), t, u

@@ -389,6 +389,7 @@ struct
          let (o, read') = o#typ read in
          let (o, write') = o#typ write in
          let (o, needed') = o#typ needed in
+         let _ = Debug.print "We're in table in types" in
          (o, Table (temporality, read', write', needed'))
       | Lens t ->
          (* Lens types are substantially more complex than allowed for by a
@@ -779,6 +780,7 @@ module Base : Constraint = struct
         (* Type *)
         | Primitive (Bool | Int | Char | Float | String | DateTime) -> true
         | Primitive _ -> false
+        | Variant (Row (x, _, _)) -> if ((StringMap.mem "Just" x) && (StringMap.mem "Nothing" x)) then true else false
         | (Function _ | Lolli _ | Record _ | Variant _ | Table _ | Lens _ | ForAll (_::_, _)) -> false
         | ForAll ([], t) -> super#type_satisfies vars t
         (* Effect *)
@@ -4119,7 +4121,7 @@ module RoundtripPrinter : PRETTY_PRINTER = struct
               -> with_value alias_recapp (name, arg_kinds, arg_types, is_dual)
 
             | Meta pt            -> meta ctx pt
-            | Present t    -> with_value presence t
+            | Present t          -> with_value presence t
             | Absent             -> constant "-"
             | Primitive t        -> with_value primitive t
 
@@ -4795,11 +4797,7 @@ let remove_field : ?idempotent:bool -> Label.t -> row -> row
 
 let make_closed_row : datatype field_env -> row =
   fun fields ->
-  Row ((FieldEnv.map (fun t -> 
-          match t with
-            | Variant _ -> Present t
-            | _ -> Present t
-          ) fields), closed_row_var, false)
+  Row ((FieldEnv.map (fun t -> Present t) fields), closed_row_var, false)
 
 let make_record_type ts = Record (make_closed_row ts)
 let make_variant_type ts = Variant (make_closed_row ts)
