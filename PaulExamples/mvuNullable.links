@@ -79,10 +79,25 @@ fun deleteTry() server {
 
 
 
-fun selectConditionTry() server {
+fun selectConditionTry1() server {
 
         query{
                 for (p <-- people)
+		where (switch(p.age){
+			case Just(_) -> true
+			case Nothing(_) -> false})
+                        [p]
+        }
+
+}
+
+fun selectConditionTry2() server {
+
+        query{
+                for (p <-- people)
+                where (switch(p.name){
+                        case "Paul" -> true
+			case _ -> false})
                         [p]
         }
 
@@ -95,7 +110,7 @@ fun updt(msg, model) {
 	switch(msg) {
 		case Select -> 
 			var cmd =
-				MvuCommands.spawnProc(fun() { SelectFinished (selectTry()) });
+				MvuCommands.spawnProc(fun() { SelectFinished (selectConditionTry1()) });
 		((name = model.name, age = model.age, state = Waiting), cmd)
 		case SelectFinished(result) -> ((name = model.name, age = model.age, state = SelectDone(result)), MvuCommands.empty)
 		case Delete ->

@@ -3,14 +3,16 @@ import MvuHTML;
 import MvuCommands;
 import Mvu;
 
-typename Model = (employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int, state: [| NotStarted | Waiting | SelectDone: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int)] |]);
+typename Model = (employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: Int, state: [| NotStarted | Waiting | SelectDone: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: Int)] |]);
 
-typename Message = [| Select | SelectFinished: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int)] |];
+typename Message = [| Select | SelectFinished: [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: Int)] |];
 
 var db = database "example_company";
-var employees = table "employees" with (employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int) from db;
+var employees = table "employees" with (employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: Int) from db;
+var managers = table "managers" with (managerid: Int, fname: String, mname: nullable String, lname: String) from db;
 
-sig unpack : (String, [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: nullable Int)]) ~%~> String
+
+sig unpack : (String, [(employeeid: Int, fname: String, mname: nullable String, lname: String, candrive: nullable Bool, managerid: Int)]) ~%~> String
 fun unpack(t, l){
 
     var middleName = if (l == []){
@@ -33,21 +35,11 @@ fun unpack(t, l){
         }
     };
 
-    var manager = if (l == []){
-        ""
-    }
-    else {
-        switch(hd(l).managerid){
-            case Just(x) -> intToString(x)
-            case Nothing(_) -> "No Manager"
-        }
-    };
-
     if (l == []){
         ""
     }
     else {
-        "EmployeeID: " ^^ intToString(hd(l).employeeid) ^^ " | Name: " ^^ hd(l).fname ^^ " " ^^ middleName ^^ " " ^^ hd(l).lname ^^ " | " ^^ driving ^^ " | ID of manager: " ^^ manager ^^ "\n" ^^ unpack(t, tl(l))
+        "EmployeeID: " ^^ intToString(hd(l).employeeid) ^^ " | Name: " ^^ hd(l).fname ^^ " " ^^ middleName ^^ " " ^^ hd(l).lname ^^ " | " ^^ driving ^^ " | ID of manager: " ^^ intToString(hd(l).managerid) ^^ "\n" ^^ unpack(t, tl(l))
     }
 
 }
@@ -81,6 +73,18 @@ fun selectTry() server {
     }
 }
 
+fun selectConnectedTry() server {
+
+	query{
+	    for (m <-- managers)
+	    	for (e <-- employees)
+	   	where (m.employeeid == e.managerid)
+			[(efname = e.fname, emname = e.mname, elname = e.lname, mfname = m.fname, mmname = m.mname, mlname = m.lname)]
+
+	}
+
+}
+
 sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
 fun updt(msg, model) {
 
@@ -94,7 +98,7 @@ fun updt(msg, model) {
 }
 
 fun mainPage() {
-	Mvu.runCmd("placeholder", (employeeid = 0, fname = "", mname = Just(""), lname = "", candrive = Just(false), managerid = Just(0), state = NotStarted), view, updt, MvuCommands.empty);
+	Mvu.runCmd("placeholder", (employeeid = 0, fname = "", mname = Just(""), lname = "", candrive = Just(false), managerid = 0, state = NotStarted), view, updt, MvuCommands.empty);
 
 	page
 	<html>

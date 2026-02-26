@@ -1,0 +1,96 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+typename Model = (id: Int, age: nullable Int, name: String, candrive: nullable Bool, state: [| NotStarted | Waiting | SelectDone: [(name: String, drive: nullable Bool)] |]);
+
+typename Message = [| Select | SelectFinished: [(name: String, drive: nullable Bool)] |];
+
+var db = database "paul_example";
+var people = table "people" with (id: Int, name: String, age: nullable Int) from db;
+var driving = table "driving" with (id: Int, candrive: nullable Bool) from db;
+
+
+sig unpack : (String, [(name: String, drive: nullable Bool)]) ~%~> String
+fun unpack(t, l){
+
+	var driveOutput = if (l == []){
+		""
+	}
+	else {
+	    switch(hd(l).drive){
+		case Just(x) -> if (x) {"can drive"} else {"cannot drive"}
+		case Nothing(_) -> "has given no info about driving ability (best not to risk it)"
+	    }
+	};
+
+	if (l == [])
+		""
+	else
+		hd(l).name ^^ " " ^^ driveOutput ^^ "|-------|" ^^ unpack(t, tl(l))
+
+}
+
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)
+fun view(model) {
+
+	open MvuAttrs;
+	open MvuHTML;
+
+	var text = 
+	switch(model.state) {
+		case NotStarted -> "Not Started"
+		case Waiting -> "Waiting"
+		case SelectDone(result) -> unpack("", result)
+	};
+
+	div(a0,
+		button(onClick(fun() { Select }),  textNode("Select"))
+        ) +*
+	div(a0,
+		textNode(text)
+	)
+
+}
+
+fun selectTry() server {
+
+	query{
+		for (p <-- people)
+		for (d <-- driving)
+		where((p.id == d.id))
+			[(name = p.name, drive = d.candrive)]
+	}
+
+}
+
+sig updt: (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+
+	switch (msg) {
+		case Select ->
+			var cmd = 
+				MvuCommands.spawnProc(fun() {SelectFinished (selectTry())});
+		((model with state = Waiting), cmd)
+		case SelectFinished(result) -> ((model with state = SelectDone(result)), MvuCommands.empty)	
+	}
+
+}
+
+
+
+fun mainPage() {
+	Mvu.runCmd("placeholder", (id = 0, name = "", age = Just(0), candrive = Just(false), state = NotStarted), view, updt, MvuCommands.empty);
+
+	page
+	<html>
+	<body>
+	<div id="placeholder"></div>
+	</body>
+	</html>
+
+}
+
+serveThis(mainPage)

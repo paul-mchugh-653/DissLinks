@@ -475,6 +475,7 @@ struct
             Q.If (c, project (t, label), project (e, label))
           | Q.Var (_x, Types.Record row) ->
             let field_types =  Q.field_types_of_row row in
+            let _ = Debug.print ("In the project branch of norm") in
             assert (StringMap.mem label field_types);
             Q.Project (r, label)
           | _ -> Q.query_error ("Error projecting from record: %s") (Q.string_of_t r)
@@ -504,13 +505,17 @@ struct
           | _ -> Q.query_error "Error erasing from record"
       in
         erase (norm env r, labels)
-    | Q.Variant (label, v) -> Q.Variant (label, norm env v)
+    | Q.Variant (label, v) -> let _ = Debug.print "We're in variant in norm " in Q.Variant (label, norm env v)
     | Q.Apply (f, xs) -> apply env (norm env f, List.map (norm env) xs)
     | Q.If (c, t, e) ->
         reduce_if_condition (norm env c, norm env t, norm env e)
     | Q.Case (v, cases, default) ->
+      let _ = Debug.print ("The whole case: " ^ (QueryLang.show (Q.Case (v, cases, default)))) in
+      let _ = Debug.print ("The v in case: " ^ (QueryLang.show v)) in
       let rec reduce_case (v, cases, default) =
-        match v with
+        let _ = Debug.print ("Justin Case") in
+        match v with 
+        | Q.Project (var, l) -> Q.Project (var, l)
         | Q.Variant (label, v) as w ->
            begin
              match StringMap.lookup label cases, default with
@@ -527,10 +532,10 @@ struct
              (c,
               reduce_case (t, cases, default),
               reduce_case (e, cases, default))
-        |  _ -> assert false
+        |  x -> let _ = Debug.print ("Debug here: " ^ (QueryLang.show x)) in assert false
       in
       reduce_case (norm env v, cases, default)
-    | v -> v
+    | v ->  v
 
   and apply env : Q.t * Q.t list -> Q.t = function
     | Q.Closure ((xs, body), closure_env), args ->
@@ -641,5 +646,5 @@ let compile_delete : Value.database -> Value.env ->
     let env = Q.bind (Q.env_of_value_env QueryPolicy.Flat env) (x, Q.Var (x, tyx)) in
     let where = opt_map (Eval.norm_comp env) where in
     let q = Q.delete ((x, table), where) in
-      Debug.print ("Generated update query: " ^ (db#string_of_query q));
+      Debug.print ("Generated delete query: " ^ (db#string_of_query q));
       q

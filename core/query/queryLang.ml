@@ -732,7 +732,7 @@ let rec select_clause : Sql.index -> bool -> t -> Sql.select_clause =
           (List.rev
             (StringMap.fold
               (fun name _ fields -> 
-                (Sql.Project (var, name, true), name)::fields)
+                (Sql.Project (var, name, false), name)::fields)
               fields
               []))
       in
@@ -785,6 +785,7 @@ and base : Sql.index -> t -> Sql.base = fun index ->
     | Apply (Primitive f, vs) ->
         Sql.Apply (f, List.map (base index) vs)
     | Project (Var (x, tyx), name) ->
+                let _ = Debug.print "Made it to queryLang Project" in
                 let _ = Debug.print ("\n Here in Project in queryLang the type is: " ^ Types.string_of_datatype tyx) in
                 begin
                     match tyx with 

@@ -328,7 +328,7 @@ class virtual printer =
           pp_fields fields
           Format.pp_print_string (fresh_dummy_var ())
           pr_b condition
-      | Select (mult, fields, tables, condition, gbys, os) ->
+      | Select (mult, fields, tables, condition, gbys, os) -> 
           self#pp_select ppf mult fields tables condition gbys os ignore_fields
       | Delete { del_table; del_where } ->
           self#pp_delete ppf del_table del_where
