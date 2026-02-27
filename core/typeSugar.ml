@@ -2907,7 +2907,6 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                 fields ([], StringMap.empty, StringMap.empty, Usage.empty) in
               begin match rest with
                 | None ->
-                   let _ = Debug.print "In None" in
                    let r = T.Row (field_env, Unionfind.fresh T.Closed, false) in
                     RecordLit (alistmap erase fields, None), T.Record r, field_usages
                 | Some r ->
@@ -3971,8 +3970,6 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                          let tt = Types.make_table_type (tmp, a, b, c) in
                          let pattern = tpc pattern in
                          let e = tc e in
-                         let (_, temp, _) = e in
-                         let _ = Debug.print ("Type of e after: " ^ Types.string_of_datatype temp) in
                          let () = unify ~handle:Gripers.iteration_table_body (pos_and_typ e, no_pos tt) in
                          let () = unify ~handle:(Gripers.iteration_table_pattern tmp)
                             (ppos_and_typ pattern, (exp_pos e, pattern_type))
@@ -4137,7 +4134,6 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                       end
                   | _ ->
                       let fieldtype = Types.fresh_type_variable (lin_any, res_any) in
-                      let _ = Debug.print ("This isn't ForAll: " ^ Types.string_of_datatype fieldtype) in
                         unify ~handle:Gripers.projection
                           (pos_and_typ r, no_pos (T.Record (Types.make_singleton_open_row
                                                              (l, T.Present fieldtype)

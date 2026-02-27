@@ -507,7 +507,9 @@ struct
         erase (norm env r, labels)
     | Q.Variant (label, v) -> let _ = Debug.print "We're in variant in norm " in Q.Variant (label, norm env v)
     | Q.Apply (f, xs) -> apply env (norm env f, List.map (norm env) xs)
-    | Q.If (c, t, e) ->
+    | Q.If (c, t, e) -> let _ = Debug.print ("We're in If: " ^ (QueryLang.show c)) in
+        let _ = Debug.print ("If and also: " ^ (QueryLang.show t)) in
+        let _ = Debug.print ("On top of that: " ^ (QueryLang.show e)) in
         reduce_if_condition (norm env c, norm env t, norm env e)
     | Q.Case (v, cases, default) ->
       let _ = Debug.print ("The whole case: " ^ (QueryLang.show (Q.Case (v, cases, default)))) in
@@ -515,8 +517,12 @@ struct
       let rec reduce_case (v, cases, default) =
         let _ = Debug.print ("Justin Case") in
         match v with 
-        | Q.Project (var, l) -> Q.Project (var, l)
+        | Q.Project (var, l) -> let normal_var = (norm env var) in
+            let _ = Debug.print ("Not normalised var: " ^ (QueryLang.show var)) in
+            let _ = Debug.print ("Normalised Var: " ^ (QueryLang.show normal_var)) in
+                (Q.Project (normal_var, l))
         | Q.Variant (label, v) as w ->
+           let _ = Debug.print ("In the variant part for " ^ label) in
            begin
              match StringMap.lookup label cases, default with
              | Some (b, c), _ ->
