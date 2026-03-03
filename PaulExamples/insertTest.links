@@ -4,13 +4,7 @@ var people = table "people" with (name: String, age: nullable Int) from db;
 
 fun main() {
 
-query{
-
-	for (p <-- people)
-	where (p.age == Just(50))
-	[p]
-
-}
+	insert people values (name, age) [(name = "Mark", age = Nothing(0))]
 
 }
 

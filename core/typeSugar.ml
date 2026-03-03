@@ -3289,7 +3289,7 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
             let read  = T.Record (Types.make_empty_open_row (lin_any, res_base)) in
             let write = T.Record (Types.make_empty_open_row (lin_any, res_base)) in
             let needed = T.Record (Types.make_empty_open_row (lin_any, res_base)) in
-            let () = unify ~handle:Gripers.insert_table
+            let () = unify ~handle:Gripers.insert_table 
               (pos_and_typ into, no_pos (T.Table (temporality, read, write, needed))) in
 
             let field_env =
@@ -3312,11 +3312,12 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                         |> Types.make_valid_time_data_type
                         |> Types.make_list_type in
                     unify ~handle:Gripers.sequenced_insert_values (pos_and_typ values, no_pos ty)
-                | _ ->
+                | _ -> let _ = Debug.print ("Made it this far, but probably no further: " ^ (Types.string_of_row (T.Row (field_env, Unionfind.fresh T.Closed, false)))) in
                     unify ~handle:Gripers.insert_values
                       (pos_and_typ values,
                        no_pos (Types.make_list_type (T.Record (T.Row (field_env, Unionfind.fresh T.Closed, false)))))
             in
+            let _ = Debug.print ("Nevermind, I'm the greatest") in
 
             let needed_env =
               StringMap.map
@@ -3325,6 +3326,7 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
 
             (* all fields being inserted must be present in the read row *)
             let row = T.Row (field_env, Types.fresh_row_variable (lin_any, res_base), false) in
+            let _ = Debug.print ("We have the row type here: " ^ (Types.string_of_row row)) in
             let () = unify ~handle:Gripers.insert_read
               (no_pos read, no_pos (T.Record row)) in
 

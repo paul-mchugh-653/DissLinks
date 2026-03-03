@@ -178,8 +178,6 @@ let rec expression_of_base_value : Value.t -> t = function
         |> StringMap.from_alist in
       Record fields
   | `DateTime dt -> Constant (Constant.DateTime dt)
-  | `Variant ("Just", t) -> let _ = Debug.print ("We're in Variant and things are looking good: " ^ (Value.show t)) in 
-                                (expression_of_base_value t) 
   | other ->
       raise (internal_error ("expression_of_base_value undefined for " ^
         Value.string_of_value other))

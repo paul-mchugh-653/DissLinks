@@ -780,7 +780,7 @@ module Base : Constraint = struct
         (* Type *)
         | Primitive (Bool | Int | Char | Float | String | DateTime) -> true
         | Primitive _ -> false
-        | Variant (Row (x, _, _)) -> if ((StringMap.mem "Just" x) && (StringMap.mem "Nothing" x)) then true else false
+        | Variant (Row (x, _, _)) -> if ((StringMap.mem "Just" x) || (StringMap.mem "Nothing" x)) then true else false
         | (Function _ | Lolli _ | Record _ | Variant _ | Table _ | Lens _ | ForAll (_::_, _)) -> false
         | ForAll ([], t) -> super#type_satisfies vars t
         (* Effect *)
