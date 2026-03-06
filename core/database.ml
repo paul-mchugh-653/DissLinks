@@ -55,6 +55,7 @@ let get_variant_type t =
 
 
 let rec value_of_db_string (value:string) t =
+  let _ = Debug.print ("Right, in vdbs: " ^ value) in
   match TypeUtils.concrete_type t with
     | Types.Primitive Primitive.Bool ->
         (* HACK:
@@ -88,13 +89,11 @@ let rec value_of_db_string (value:string) t =
        else Value.box_float (float_of_string value)
     | Types.Primitive Primitive.DateTime ->
        Value.box_datetime (Timestamp.parse_db_string value)
-    | Types.Variant _ -> 
-                        if (String.equal value "_Nothing") then
+    | Types.Variant _ -> let _ = ("Here is the value, here it is: " ^ value) in
+                        if (String.equal value "") then
                                 Value.box_variant "Nothing" (Value.box_string "")
                         else
-                                let string_length = String.length value in
-                                let unwrapped_string = String.sub value 6 (string_length -7) in
-                                        Value.box_variant "Just" (value_of_db_string unwrapped_string (get_variant_type t)) 
+                                Value.box_variant "Just" (value_of_db_string value (get_variant_type t)) 
     | t -> raise (runtime_error
       ("value_of_db_string: unsupported datatype: '" ^
         Types.string_of_datatype t ^"'"))

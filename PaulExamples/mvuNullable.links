@@ -63,7 +63,7 @@ fun selectTry() server {
 
 	query{
 		for (p <-- people)
-		where (p.age == Just(50))
+		where (p.age > Just(20))
 			[p]
 	}
 
@@ -75,33 +75,6 @@ fun deleteTry() server {
 		case Just(_) -> false
 		case Nothing(_) -> true
 	})
-
-}
-
-
-
-fun selectConditionTry1() server {
-
-        query{
-                for (p <-- people)
-		where (switch(p.age){
-			case Just(_) -> true
-			case Nothing(_) -> false})
-                        [p]
-        }
-
-}
-
-fun selectConditionTry2() server {
-
-        query{
-                for (p <-- people)
-                where (switch(p.name){
-                        case "Paul" -> true
-			case "Tom" -> true
-			case other -> false})
-                        [p]
-        }
 
 }
 

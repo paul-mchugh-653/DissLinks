@@ -513,10 +513,7 @@ struct
       let _ = Debug.print ("The whole case: " ^ (QueryLang.show (Q.Case (v, cases, default)))) in
       let rec reduce_case (v, cases, default) =
         let _ = Debug.print ("Justin Case") in
-        match v with 
-        | Q.Project (var, l) -> let normal_var = (norm env var) in
-            let _ = Debug.print ("Normalised Var: " ^ (QueryLang.show normal_var)) in
-                (Q.Project (normal_var, l))            
+        match v with             
         | Q.Variant (label, v) as w ->
            let _ = Debug.print ("In the variant part for " ^ label) in
            begin

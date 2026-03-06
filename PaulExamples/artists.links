@@ -1,0 +1,220 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+typename Model = (name: String, genre: nullable String, members: nullable Int, active: nullable Bool, ticket: nullable Float, major: nullable String, state: [| NotStarted | Waiting | UpdateDone | InsertDone | DeleteDone | SelectDone: [(name: String, genre: nullable String, members: nullable Int, active: nullable Bool, ticket: nullable Float, major: nullable String)] |]);
+
+typename Message = [| SelectAll | SelectCheap | SelectRock | SelectFinished: [(name: String, genre: nullable String, members: nullable Int, active: nullable Bool, ticket: nullable Float, major: nullable String)] | Insert | Delete | UpdateToRock | UpdateToFunk | InsertFinished:() | DeleteFinished:() | UpdateFinished:() |];
+
+var db = database "example";
+var artists = table "artists" with (name: String, genre: nullable String, members: nullable Int, active: nullable Bool, ticket: nullable Float, major: nullable String) from db;
+
+sig unpack : ([(name: String, genre: nullable String, members: nullable Int, active: nullable Bool, ticket: nullable Float, major: nullable String)]) ~%~> MvuHTML.HTML(Message)
+fun unpack(l){
+	
+	open MvuHTML;
+	open MvuAttrs;
+
+	if (l == []){
+		 div(a0,
+            	 	textNode("")
+        	)}		
+	else {
+		var genre = switch (hd(l).genre){
+			case Just(x) -> x
+			case Nothing(_) -> "Defies genres"
+		};
+	
+		var members = switch (hd(l).members){
+			case Just(x) -> intToString(x)
+			case Nothing(_) -> "Unknown"
+		};
+
+		var active = switch (hd(l).active){
+                        case Just(x) -> if (x) "true" else "false"
+                        case Nothing(_) -> "Unconfirmed"
+        	};
+
+		var ticket = switch (hd(l).ticket){
+                        case Just(x) -> floatToString(x)
+                        case Nothing(_) -> "Unknown"
+        	};
+
+		var major = switch (hd(l).major){
+                        case Just(x) -> x
+                        case Nothing(_) -> "Unknown"
+        	};
+
+		div(a0,
+                	textNode("Name: " ^^ hd(l).name ^^ " | ") +*
+                        textNode("Genre: " ^^ genre ^^ " | ") +*
+                        textNode("Members: " ^^ members ^^ " | ") +*
+                        textNode("Active: " ^^ active ^^ " | ") +*
+                        textNode("Ticket Price: " ^^ ticket ^^ " | ") +*
+                        textNode("Favourite Major: " ^^ major)
+                ) +*
+		unpack(tl(l))
+
+
+	}
+
+}
+
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)
+fun view(model) {
+
+	open MvuAttrs;
+	open MvuHTML;
+
+	var text = 
+	switch(model.state){
+		case NotStarted -> div(a0, textNode("Not Started"))
+		case Waiting -> div(a0, textNode("Waiting"))
+		case InsertDone -> div(a0, textNode("Insert Done"))
+		case DeleteDone -> div(a0, textNode("Delete Done"))
+		case UpdateDone -> div(a0, textNode("Update Done"))
+		case SelectDone(result) -> unpack(result)
+	};
+
+	div(a0,
+		text
+	) +*	
+	div(a0,
+		button(onClick(fun() { SelectAll } ), textNode("Select All"))
+	) +*
+        div(a0,
+                button(onClick(fun() { SelectCheap } ), textNode("Select artists with tickets < 50"))
+        ) +*
+        div(a0,
+                button(onClick(fun() { SelectRock } ), textNode("Select rock artists"))
+        ) +*
+        div(a0,
+                button(onClick(fun() { UpdateToRock } ), textNode("Set Talking Heads to Rock"))
+        ) +*
+        div(a0,
+                button(onClick(fun() { UpdateToFunk } ), textNode("Change it back!!"))
+        ) +*
+        div(a0,
+                button(onClick(fun() { Insert } ), textNode("Add Steely Dan"))
+        ) +*
+        div(a0,
+                button(onClick(fun() { Delete } ), textNode("Delete pi prices (Steely Dan)"))
+        )
+
+}
+
+
+fun selectAll() server {
+
+	query{
+		for (a <-- artists)
+			[a]
+	}
+
+}
+
+fun selectCheap() server {
+
+	query{
+		for (a <-- artists)
+		where (a.ticket < Just(50.0))
+			[a]
+	}
+
+}
+
+fun selectRock() server {
+
+	query{
+		for (a <-- artists)
+		where (a.genre == Just("Rock"))
+			[a]
+	}
+
+}
+
+fun updateTalkingHeads() server {
+	
+	update (a <-- artists)
+	where (a.name == "Talking Heads")
+	set (genre = Just("Rock"))
+
+}
+
+fun updateTalkingHeads2() server {
+
+        update (a <-- artists)
+        where (a.name == "Talking Heads")
+        set (genre = Just("Funk"))
+
+}
+
+fun insertSteelyDan() server {
+
+	insert artists
+	values (name, genre, members, active, ticket, major)
+	[(name = "Steely Dan", genre = Just("Rock"), members = Just(2), active = Just(false), ticket = Just(3.14), major = Just("D"))]
+
+}
+
+fun deleteSteelyDan() server {
+
+	delete (a <-- artists)
+	where (a.ticket == Just(3.14))
+
+}
+
+sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+
+	switch(msg){
+
+		case SelectAll ->
+			var cmd = MvuCommands.spawnProc(fun() {SelectFinished(selectAll()) });
+			((model with state = Waiting), cmd)
+		case SelectCheap ->
+                        var cmd = MvuCommands.spawnProc(fun() {SelectFinished(selectCheap()) });
+                        ((model with state = Waiting), cmd)
+		case SelectRock ->
+                        var cmd = MvuCommands.spawnProc(fun() {SelectFinished(selectRock()) });
+                        ((model with state = Waiting), cmd)
+		case UpdateToRock ->
+			var cmd = MvuCommands.spawnProc(fun() {UpdateFinished(updateTalkingHeads()) });
+                        ((model with state = Waiting), cmd)
+		case UpdateToFunk ->
+                        var cmd = MvuCommands.spawnProc(fun() {UpdateFinished(updateTalkingHeads2()) });
+                        ((model with state = Waiting), cmd)
+		case Insert -> 
+			var cmd = MvuCommands.spawnProc(fun() {InsertFinished(insertSteelyDan()) });
+                        ((model with state = Waiting), cmd)
+		case Delete ->
+                        var cmd = MvuCommands.spawnProc(fun() {DeleteFinished(deleteSteelyDan()) });
+                        ((model with state = Waiting), cmd)
+		case SelectFinished(result) -> ((model with state = SelectDone(result)), MvuCommands.empty)
+		case UpdateFinished() -> ((model with state = UpdateDone), MvuCommands.empty)
+		case InsertFinished() -> ((model with state = InsertDone), MvuCommands.empty)
+		case DeleteFinished() -> ((model with state = DeleteDone), MvuCommands.empty)
+
+	}
+
+}
+
+
+fun mainPage() {
+        Mvu.runCmd("placeholder", (name = "", genre = Just(""), members = Just(0), active = Just(false), ticket = Just(0.0), major = Just("X"), state = NotStarted), view, updt, MvuCommands.empty);
+
+        page
+        <html>
+        <body>
+        <div id="placeholder"></div>
+        </body>
+        </html>
+
+}
+
+serveThis(mainPage)
+
+
+

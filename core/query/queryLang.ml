@@ -796,7 +796,7 @@ and base : Sql.index -> t -> Sql.base = fun index ->
                                         let _ = Debug.print ("In Projecting querylang: " ^ (Types.string_of_datatype projected_type)) in
                                                 begin
                                                         match projected_type with
-                                                                | Types.Variant _ -> Sql.Project (x, name, true)
+                                                                | Types.Variant _ -> Sql.Project (x, name, false)
                                                                 | _ -> Sql.Project (x, name, false)
                                                 end
                         | ty ->
@@ -812,6 +812,7 @@ and base : Sql.index -> t -> Sql.base = fun index ->
     | Primitive "index" ->
         (* This is the only place the index parameter is ever materially used. *)
         Sql.RowNumber index
+    | Variant ("Just", Constant c) -> Sql.Constant c
     | e ->
       Debug.print ("Not a base expression: " ^ show e);
       assert false

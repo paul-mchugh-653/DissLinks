@@ -4,7 +4,8 @@ var people = table "people" with (name: String, age: nullable Int) from db;
 
 fun main() {
 
-	insert people values (name, age) [(name = "Mark", age = Just(26))]
+	delete (p <-- people)
+	where (p.age == Just(26))
 
 }
 

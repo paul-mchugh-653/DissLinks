@@ -7,7 +7,7 @@ fun main() {
 query{
 
 	for (p <-- people)
-	where (p.age == Just(50))
+	where (p.age == Nothing)
 	[p]
 
 }

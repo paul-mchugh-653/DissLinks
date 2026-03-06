@@ -1,0 +1,111 @@
+import MvuAttrs;
+import MvuHTML;
+import MvuCommands;
+import Mvu;
+
+typename Model = (id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float, state: [| NotStarted | Waiting | SelectDone: [(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)] |]);
+
+typename Message = [| SelectAll | SelectFinished: [(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)] |];
+
+var db = database "music";
+
+var artists = table "artist" with (id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float) from db;
+
+sig unpack : ([(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)]) ~%~> MvuHTML.HTML(Message)
+fun unpack(l){
+
+        open MvuHTML;
+        open MvuAttrs;
+
+    if (l == []){
+            div(a0,
+                textNode("")
+            )}
+    else {
+        var genre = switch (hd(l).genre){
+            case Just(x) -> x
+            case Nothing(_) -> "Defies genres"
+        };
+
+        var members = switch (hd(l).members){
+            case Just(x) -> intToString(x)
+            case Nothing(_) -> "Unknown"
+        };
+
+        var active = switch (hd(l).active){
+            case Just(x) -> if (x) "true" else "false"
+            case Nothing(_) -> "Unconfirmed"
+        };
+
+        var score  = switch (hd(l).score){
+            case Just(x) -> floatToString(x)
+            case Nothing(_) -> "Unscored"
+        };
+
+
+        div(a0,
+            textNode("id: " ^^ intToString(hd(l).id) ^^ " | ") +*
+            textNode("Name: " ^^ hd(l).name ^^ " | ") +*
+            textNode("Genre: " ^^ genre ^^ " | ") +*
+            textNode("Members: " ^^ members ^^ " | ") +*
+            textNode("Active: " ^^ active ^^ " | ") +*
+            textNode("Score: " ^^ score ^^ "/10 | ")
+        ) +*
+        unpack(tl(l))
+    }
+}
+
+
+sig view : (Model) ~%~> MvuHTML.HTML(Message)                   
+fun view(model) {
+
+    open MvuHTML;
+    open MvuAttrs;
+
+    var text =
+        switch(model.state){
+            case NotStarted -> div(a0, textNode("Not Started"))
+            case Waiting -> div(a0, textNode("Waiting"))
+            case SelectDone(result) -> unpack(result)
+        };
+    
+    div(a0, button( onClick(fun() { SelectAll }), textNode("Select All") )) +*
+    div(a0, text)
+
+}  
+
+fun selectAll() server {
+
+    query{
+        for (a <-- artists)
+            [a]
+    }
+
+}
+
+
+sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
+fun updt(msg, model) {
+
+    switch(msg){
+        case SelectAll -> 
+            var cmd = MvuCommands.spawnProc(fun() { SelectFinished(selectAll()) });
+            ((model with state = Waiting), cmd)
+        case SelectFinished(result) -> ((model with state = SelectDone(result)), MvuCommands.empty)
+    }
+
+}
+
+fun mainPage() {
+    Mvu.runCmd("placeholder", (id = 0, name = "", genre = Just(""), members = Just(0), active = Just(false), score = Just(0.0), state = NotStarted), view, updt, MvuCommands.empty);
+
+    page
+        <html>
+        <body>
+        <div id="placeholder"></div>
+        </body>
+        </html>
+
+}
+
+serveThis(mainPage)
