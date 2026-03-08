@@ -3,16 +3,63 @@ import MvuHTML;
 import MvuCommands;
 import Mvu;
 
-typename Model = (id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float, state: [| NotStarted | Waiting | SelectDone: [(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)] |]);
 
-typename Message = [| SelectAll | SelectFinished: [(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)] |];
+typename Model = (
+    id: Int, 
+    name: String, 
+    genre: String, 
+    members: Int, 
+    active: Bool, 
+    score: Float, 
+    genreNull: Bool, 
+    membersNull: Bool, 
+    activeNull: Bool, 
+    scoreNull: Bool, 
+    state: 
+        [| NotStarted 
+        | Waiting 
+        | InsertDone 
+        | DeleteDone 
+        | UpdateDone 
+        | SelectArtistDone: [(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)] 
+        | SelectSongDone: [(id: Int, name: nullable String, artist_id: nullable Int, runtime: nullable Float, lyrics: nullable Bool)] 
+        |]);
+
+
+typename Message = 
+[| SelectAllArtists
+| SelectAllSongs 
+| Insert: ()
+| Delete: ()
+| Update: ()
+| ID: Int
+| Name: String 
+| Genre: String 
+| GenreNull: Bool
+| Members: Int 
+| MembersNull: Bool
+| Active: Bool 
+| ActiveNull: Bool
+| Score: Float 
+| ScoreNull: Bool
+| InsertFinished: () 
+| DeleteFinished: ()
+| UpdateFinished: ()
+| SelectArtistFinished: [(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)] 
+| SelectSongFinished:[(id: Int, name: nullable String, artist_id: nullable Int, runtime: nullable Float, lyrics: nullable Bool)]
+|];
 
 var db = database "music";
 
 var artists = table "artist" with (id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float) from db;
+var artistsNoID = table "artist" with (name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float) from db;
 
-sig unpack : ([(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)]) ~%~> MvuHTML.HTML(Message)
-fun unpack(l){
+var songs = table "song" with (id: Int, name: nullable String, artist_id: nullable Int, runtime: nullable Float, lyrics: nullable Bool) from db;
+
+
+
+sig unpack_artist : ([(id: Int, name: String, genre: nullable String, members: nullable Int, active: nullable Bool, score: nullable Float)]) ~%~> MvuHTML.HTML(Message)
+fun unpack_artist(l){
 
         open MvuHTML;
         open MvuAttrs;
@@ -43,7 +90,7 @@ fun unpack(l){
         };
 
 
-        div(a0,
+        div(a0 +@ onClick( fun() {Delete()} ),
             textNode("id: " ^^ intToString(hd(l).id) ^^ " | ") +*
             textNode("Name: " ^^ hd(l).name ^^ " | ") +*
             textNode("Genre: " ^^ genre ^^ " | ") +*
@@ -51,8 +98,53 @@ fun unpack(l){
             textNode("Active: " ^^ active ^^ " | ") +*
             textNode("Score: " ^^ score ^^ "/10 | ")
         ) +*
-        unpack(tl(l))
+        unpack_artist(tl(l))
     }
+}
+
+sig unpack_song : ([(id: Int, name: nullable String, artist_id: nullable Int, runtime: nullable Float, lyrics: nullable Bool)]) ~%~> MvuHTML.HTML(Message)
+fun unpack_song(l){
+
+    open MvuHTML;
+    open MvuAttrs;
+
+    if (l == []){
+            div(a0,
+                textNode("")
+            )}
+    else {
+        var name = switch(hd(l).name){
+            case Just(x) -> x
+            case Nothing(_) -> "Untitled"
+        };
+
+        var artist_id = switch(hd(l).artist_id){
+            case Just(x) -> intToString(x)
+            case Nothing(_) -> "Unknown Artist"
+        };
+
+        var runtime = switch(hd(l).runtime){
+            case Just(x) -> floatToString(x)
+            case Nothing(_) -> "Unknown"
+        };
+
+        var lyrics = switch(hd(l).lyrics){
+            case Just(x) -> if (x) "True" else "False"
+            case Nothing(_) -> "Unknown"
+        };
+
+         div(a0,
+            textNode("id: " ^^ intToString(hd(l).id) ^^ " | ") +*
+            textNode("Name: " ^^ name ^^ " | ") +*
+            textNode("Artist ID: " ^^ artist_id ^^ " | ") +*
+            textNode("Runtime: " ^^ runtime ^^ " | ") +*
+            textNode("Lyrics: " ^^ lyrics ^^ " | ")
+        ) +*
+        unpack_song(tl(l))
+
+        
+    }
+
 }
 
 
@@ -66,20 +158,125 @@ fun view(model) {
         switch(model.state){
             case NotStarted -> div(a0, textNode("Not Started"))
             case Waiting -> div(a0, textNode("Waiting"))
-            case SelectDone(result) -> unpack(result)
+            case SelectArtistDone(result) -> unpack_artist(result)
+            case SelectSongDone(result) -> unpack_song(result)
+            case InsertDone -> div(a0, textNode("Inserted"))
+            case DeleteDone -> div(a0, textNode("Deleted"))
+            case UpdateDone -> div(a0, textNode("Updated"))
         };
     
-    div(a0, button( onClick(fun() { SelectAll }), textNode("Select All") )) +*
+    div(a0, button( onClick(fun() { SelectAllArtists }), textNode("Select All Artists") )) +*
+    div(a0, button( onClick(fun() { SelectAllSongs }), textNode("Select All Songs") )) +*
+    div(a0,
+        textNode("ID: ") +* input(type("text") +@ onKeyUp(fun(str) { ID(stringToInt(str)) } ), MvuHTML.empty)
+    ) +*
+    div(a0,
+        textNode("Name: ") +* input(type("text") +@ onKeyUp(fun(str) { Name(str) } ), MvuHTML.empty)
+    ) +*
+    div(a0,
+        (textNode("Genre: ") +* input(type("text") +@ onKeyUp(fun(str) { Genre(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { GenreNull(not(model.genreNull)) }), MvuHTML.empty) +* textNode("(set null)")
+    ) +*
+    div(a0,
+        (textNode("Members: ") +* input(type("text") +@ onKeyUp(fun(str) { Members( stringToInt(str) ) } ), MvuHTML.empty)) +* input(type("checkbox") +@ onClick(fun() { MembersNull(not(model.membersNull)) }), MvuHTML.empty) +* textNode("(set null)")
+    ) +*
+    div(a0,
+        (textNode("Active: ") +* input(type("text") +@ onKeyUp(fun(str) { Active((str == "true")) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { ActiveNull(not(model.activeNull)) }), MvuHTML.empty) +* textNode("(set null)")
+    ) +*
+    div(a0,
+        (textNode("Score: ") +* input(type("text") +@ onKeyUp(fun(str) { Score( stringToFloat(str) ) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { ScoreNull(not(model.scoreNull)) }), MvuHTML.empty) +* textNode("(set null)")
+    ) +*
+    div(a0,
+		button(onClick(fun() { Insert() } ), textNode("Insert"))
+	) +*
+    div(a0,
+		button(onClick(fun() { Delete() } ), textNode("Delete by ID"))
+	) +*
+    div(a0,
+		button(onClick(fun() { Update() } ), textNode("Update by ID"))
+	) +*
     div(a0, text)
 
 }  
 
-fun selectAll() server {
+fun selectAllArtists() server {
 
     query{
         for (a <-- artists)
             [a]
     }
+}
+
+fun selectAllSongs() server {
+
+    query{
+        for (s <-- songs)
+        for (a <-- artists)
+        where((s.artist_id == Just(a.id)) && s.runtime > Just(4.0))
+            [s]
+    }
+}
+
+sig deleteByID : (Model) ~%~> ()
+fun deleteByID(model) server {
+
+    delete (a <-- artists) where (a.id == model.id)
+
+}
+
+sig insertTry : (Model) ~%~> ()
+fun insertTry(model) server {
+
+    var genre = if (model.genreNull)
+            Just("NULL")
+        else
+            Just(model.genre);
+
+    var members = if (model.membersNull)
+            Just(-1)
+        else
+            Just(model.members);
+
+    var active = if (model.activeNull)
+            Just(false)
+        else
+            Just(model.active);
+
+    var score = if (model.scoreNull)
+            Just(0.0)
+        else
+            Just(model.score);
+
+    insert artistsNoID
+    values (name, genre, members, active, score) [(name = model.name, genre = genre, members = members, active = active, score = score)]
+
+}
+
+sig updateTry : (Model) ~%~> ()
+fun updateTry(model) server {
+
+    var genre = if (model.genreNull)
+            Just("NULL")
+        else
+            Just(model.genre);
+
+    var members = if (model.membersNull)
+            Just(-1)
+        else
+            Just(model.members);
+
+    var active = if (model.activeNull)
+            Just(false)
+        else
+            Just(model.active);
+
+    var score = if (model.scoreNull)
+            Just(0.0)
+        else
+            Just(model.score);
+
+    update (a <-- artists)
+    where (a.id == model.id)
+    set (name = model.name, members = members, active = active, score = score)
 
 }
 
@@ -88,16 +285,42 @@ sig updt : (Message, Model) ~%~> (Model, MvuCommands.Command(Message))
 fun updt(msg, model) {
 
     switch(msg){
-        case SelectAll -> 
-            var cmd = MvuCommands.spawnProc(fun() { SelectFinished(selectAll()) });
+        case SelectAllArtists -> 
+            var cmd = MvuCommands.spawnProc(fun() { SelectArtistFinished(selectAllArtists()) });
             ((model with state = Waiting), cmd)
-        case SelectFinished(result) -> ((model with state = SelectDone(result)), MvuCommands.empty)
+        case SelectAllSongs -> 
+            var cmd = MvuCommands.spawnProc(fun() { SelectSongFinished(selectAllSongs()) });
+            ((model with state = Waiting), cmd)
+        case Insert() ->
+            var cmd = MvuCommands.spawnProc(fun() { InsertFinished(insertTry(model)) });
+            ((model with state = Waiting), cmd)
+        case Delete() ->
+            var cmd = MvuCommands.spawnProc(fun() { DeleteFinished(deleteByID(model)) });
+            ((model with state = Waiting), cmd)
+        case Update() ->
+            var cmd = MvuCommands.spawnProc(fun() { UpdateFinished(updateTry(model)) });
+            ((model with state = Waiting), cmd)
+        case SelectArtistFinished(result) -> ((model with state = SelectArtistDone(result)), MvuCommands.empty)
+        case SelectSongFinished(result) -> ((model with state = SelectSongDone(result)), MvuCommands.empty)
+        case InsertFinished -> ((model with state = InsertDone), MvuCommands.empty)
+        case DeleteFinished -> ((model with state = DeleteDone), MvuCommands.empty)
+        case UpdateFinished -> ((model with state = UpdateDone), MvuCommands.empty)
+        case ID(i) -> ((model with id = i), MvuCommands.empty)
+        case Name(n) -> ((model with name = n), MvuCommands.empty)
+        case Genre(g) -> ((model with genre = g), MvuCommands.empty)
+        case GenreNull(gn) -> ((model with genreNull = gn), MvuCommands.empty)
+        case Members(m) -> ((model with members = m), MvuCommands.empty)
+        case MembersNull(mn) -> ((model with membersNull = mn), MvuCommands.empty)
+        case Active(a) -> ((model with active = a), MvuCommands.empty)
+        case ActiveNull(an) -> ((model with activeNull = an), MvuCommands.empty)
+        case Score(s) -> ((model with score = s), MvuCommands.empty)
+        case ScoreNull(sn) -> ((model with scoreNull = sn), MvuCommands.empty)
     }
 
 }
 
 fun mainPage() {
-    Mvu.runCmd("placeholder", (id = 0, name = "", genre = Just(""), members = Just(0), active = Just(false), score = Just(0.0), state = NotStarted), view, updt, MvuCommands.empty);
+    Mvu.runCmd("placeholder", (id = 0, name = "", genre = "", members = 0, active = false, score = 0.0, genreNull = false, membersNull = false, activeNull = false, scoreNull = false, state = NotStarted), view, updt, MvuCommands.empty);
 
     page
         <html>

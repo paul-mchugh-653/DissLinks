@@ -812,7 +812,7 @@ and base : Sql.index -> t -> Sql.base = fun index ->
     | Primitive "index" ->
         (* This is the only place the index parameter is ever materially used. *)
         Sql.RowNumber index
-    | Variant ("Just", Constant c) -> Sql.Constant c
+    | Variant ("Just", v) -> base index v
     | e ->
       Debug.print ("Not a base expression: " ^ show e);
       assert false
