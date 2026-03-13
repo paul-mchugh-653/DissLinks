@@ -320,7 +320,6 @@ val get_row_var : row -> int option
 
 (** building rows *)
 val make_closed_row : datatype field_env -> row
-val make_closed_row' : datatype field_env -> row
 val row_with : (string * field_spec) -> row -> row
 val extend_row : datatype field_env -> row -> row
 val extend_row_safe : datatype field_env -> row -> row option
@@ -331,7 +330,6 @@ val remove_field : ?idempotent:bool -> Label.t -> row -> row
 
 (** removing top-level meta typevars and aliases; imported from typeUtils.ml *)
 val concrete_type' : datatype -> datatype
-val paul_concrete_type' : datatype -> datatype
 
 (** deconstructing rows *)
 val extract_row : datatype -> row
@@ -385,7 +383,6 @@ val make_list_type : datatype -> datatype
 val make_mapentry_type : datatype -> datatype -> datatype
 val make_process_type : row -> datatype
 val make_record_type  : datatype field_env -> datatype
-val make_record_type' : datatype field_env -> datatype
 val make_variant_type : datatype field_env -> datatype
 val make_table_type : Temporality.t * datatype * datatype * datatype -> datatype
 val make_tablehandle_alias : datatype * datatype * datatype -> datatype

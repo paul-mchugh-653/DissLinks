@@ -57,12 +57,12 @@ and aggregator ar q =
   let z = Var.fresh_raw_var () in
   let tyk, _tyv = q |> QL.type_of_expression |> Types.unwrap_map_type in
   let fsk, _, _ = tyk |> Types.extract_row |> Types.extract_row_parts in
-  let fields_k = fsk |> StringMap.to_alist |> List.map (fun (f,_) -> S.Project (z, "1@" ^ f, false), "1@" ^ f) in
+  let fields_k = fsk |> StringMap.to_alist |> List.map (fun (f,_) -> S.Project (z, "1@" ^ f), "1@" ^ f) in
   let fields_v = ar |> StringMap.to_alist |> List.map (fun (f_out, (aggfun, f_in)) ->
-    S.Apply (aggr aggfun, [S.Project (z, "2@" ^ f_in, false)]), "2@" ^ f_out)
+    S.Apply (aggr aggfun, [S.Project (z, "2@" ^ f_in)]), "2@" ^ f_out)
   in
   let fields = fields_k @ fields_v in
-  let gbys = List.map (fun (_,f) -> S.Project (z, f, false)) fields_k in
+  let gbys = List.map (fun (_,f) -> S.Project (z, f)) fields_k in
   S.Select (S.All, S.Fields fields, [S.Subquery (S.Standard, sql_of_query S.All q, z)], S.Constant (Constant.Bool true), gbys, [])
 
 and generator locvars = function
@@ -82,7 +82,7 @@ and generator locvars = function
     let fields =
       fsk
       |> StringMap.to_alist
-      |> List.map (fun (f,_) -> S.Project (z, "1@" ^ f, false), f)
+      |> List.map (fun (f,_) -> S.Project (z, "1@" ^ f), f)
     in
     S.Subquery (dependency_of_contains_free (E.contains_free locvars q),
       S.Select (S.Distinct,
@@ -130,7 +130,7 @@ and base_exp = function
    so I'll make an act of faith and believe that we never project from tables, but only from variables *)
 | QL.Project (QL.Table _, _) as q ->
     Debug.print ("error in EvalMixingQuery.base_exp: unexpected Project on Table: " ^ QL.show q); failwith "base_exp"
-| QL.Project (QL.Var (n,_), l) -> S.Project (n,l, false)
+| QL.Project (QL.Var (n,_), l) -> S.Project (n,l)
 | QL.If (c, t, e) -> S.Case (base_exp c, base_exp t, base_exp e)
 | QL.Apply (QL.Primitive "tilde", [s; r]) ->
     begin

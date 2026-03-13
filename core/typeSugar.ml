@@ -513,7 +513,7 @@ end
 
     let fixed_type pos thing t l =
       let ppr_t = show_type t in
-      with_but pos (thing ^ " must have tyyyype " ^ code ppr_t) l
+      with_but pos (thing ^ " must have type " ^ code ppr_t) l
 
     let if_condition ~pos ~t1:l ~t2:(_,t) ~error:_ =
       fixed_type pos ("The condition of an " ^ code "if (...) ... else ..." ^
@@ -1163,7 +1163,7 @@ end
 
     let iteration_table_body ~pos ~t1:l ~t2:(_,t) ~error:_ =
       build_tyvar_names [snd l; t];
-      fixed_type pos "The booooody of a table generator" t l
+      fixed_type pos "The body of a table generator" t l
 
     let iteration_table_pattern tmp ~pos ~t1:l ~t2:(rexpr,rt) ~error:_ =
       build_tyvar_names [snd l; rt];
@@ -2910,7 +2910,6 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                    let r = T.Row (field_env, Unionfind.fresh T.Closed, false) in
                     RecordLit (alistmap erase fields, None), T.Record r, field_usages
                 | Some r ->
-                    let _ = Debug.print "In Some" in
                     let r : phrase * Types.datatype * Usage.t = tc r in
 
                     (* FIXME:
@@ -3097,10 +3096,6 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                     tbl_database = erase tbl_database
                 }
             in
-            let _ = Debug.print ("It's dtype: " ^ Sugartypes.Datatype.show (WithPos.node dtype)) in
-            let _ = Debug.print ("Read row: " ^ Types.string_of_row read_row) in
-            let _ = Debug.print ("Write row: " ^ Types.string_of_row write_row) in
-            let _ = Debug.print ("Needed row: " ^ Types.string_of_row needed_row) in
             tlit,
             T.Table (tmp, read_row, write_row, needed_row),
             Usage.combine (usages tname) (usages tbl_database)
@@ -3289,7 +3284,7 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
             let read  = T.Record (Types.make_empty_open_row (lin_any, res_base)) in
             let write = T.Record (Types.make_empty_open_row (lin_any, res_base)) in
             let needed = T.Record (Types.make_empty_open_row (lin_any, res_base)) in
-            let () = unify ~handle:Gripers.insert_table 
+            let () = unify ~handle:Gripers.insert_table
               (pos_and_typ into, no_pos (T.Table (temporality, read, write, needed))) in
 
             let field_env =
@@ -3312,12 +3307,10 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                         |> Types.make_valid_time_data_type
                         |> Types.make_list_type in
                     unify ~handle:Gripers.sequenced_insert_values (pos_and_typ values, no_pos ty)
-                | _ -> let _ = Debug.print ("Made it this far, but probably no further: " ^ (Types.string_of_row (T.Row (field_env, Unionfind.fresh T.Closed, false)))) in
                     unify ~handle:Gripers.insert_values
                       (pos_and_typ values,
                        no_pos (Types.make_list_type (T.Record (T.Row (field_env, Unionfind.fresh T.Closed, false)))))
             in
-            let _ = Debug.print ("Nevermind, I'm the greatest") in
 
             let needed_env =
               StringMap.map
@@ -3326,7 +3319,6 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
 
             (* all fields being inserted must be present in the read row *)
             let row = T.Row (field_env, Types.fresh_row_variable (lin_any, res_base), false) in
-            let _ = Debug.print ("We have the row type here: " ^ (Types.string_of_row row)) in
             let () = unify ~handle:Gripers.insert_read
               (no_pos read, no_pos (T.Record row)) in
 

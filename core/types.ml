@@ -179,7 +179,7 @@ and typ =
   | Closed
   (* Presence *)
   | Absent
-  | Present of typ (* Present's bool type is true if nullable and false if not *)
+  | Present of typ
   (* Session *)
   | Input of (typ * session_type)
   | Output of (typ * session_type)
@@ -389,7 +389,6 @@ struct
          let (o, read') = o#typ read in
          let (o, write') = o#typ write in
          let (o, needed') = o#typ needed in
-         let _ = Debug.print "We're in table in types" in
          (o, Table (temporality, read', write', needed'))
       | Lens t ->
          (* Lens types are substantially more complex than allowed for by a
@@ -1168,8 +1167,7 @@ let concrete_type rec_names t =
       | _ -> t
   in
   ct rec_names t
-
-  
+ 
 (** remove any redundant top-level 'Meta's from a presence flag. *)
 let rec concrete_field_spec f =
   match f with
@@ -1767,7 +1765,7 @@ let is_tuple ?(allow_onetuples=false) row =
 
 let extract_tuple = function
   | Row (field_env, _, _) ->
-     FieldEnv.to_list (fun _ -> function 
+     FieldEnv.to_list (fun _ -> function
          | Present t -> t
          | Absent | Meta _ -> assert false
          | _ -> raise tag_expectation_mismatch) field_env
@@ -4526,49 +4524,6 @@ let make_fresh_envs : datatype -> datatype IntMap.t * row IntMap.t * field_spec 
     | Presence -> make_env_f boundvars t in
   make_env S.empty
 
-let paul_concrete_type' t =
-  let rec ct rec_names t : datatype =
-    let _ = Debug.print ("In paul_concrete_type': " ^ string_of_datatype t) in
-    match t with
-    | Alias (_, _, t) -> ct rec_names t
-    | Meta point ->
-       begin
-         match Unionfind.find point with
-         | Var _ -> t
-         | Recursive (var, _kind, t) ->
-            if RecIdSet.mem (MuBoundId var) rec_names then
-              Meta point
-            else
-              ct (RecIdSet.add (MuBoundId var) rec_names) t
-         | t -> ct rec_names t
-       end
-    | ForAll (qs, t) ->
-       let _ = Debug.print ("In ForAll in Paul concrete: " ^ (string_of_datatype t)) in
-       begin
-         match ct rec_names t with
-         | ForAll (qs', t') ->
-            ForAll (qs @ qs', t')
-         | t ->
-            begin
-              match qs with
-              | [] -> t
-              | _ -> ForAll (qs, t)
-            end
-       end
-    | Dual s -> dual_type (ct rec_names s)
-    | RecursiveApplication ({ r_unique_name; r_dual; r_args; r_unwind ; _ } as appl) ->
-       if (RecIdSet.mem (NominalId r_unique_name) rec_names) then
-         RecursiveApplication appl
-       else
-         let body = r_unwind r_args r_dual in
-         ct (RecIdSet.add (NominalId r_unique_name) rec_names) body
-    | _ -> let _ = Debug.print "Didn't match any patterns " in t
-
-
-  in
-  ct RecIdSet.empty t
-
-
 let make_rigid_envs datatype : datatype IntMap.t * row IntMap.t * field_spec Utility.IntMap.t =
   let tenv, renv, penv = make_fresh_envs datatype in
     (IntMap.map (fun _ -> fresh_rigid_type_variable (lin_any, res_any)) tenv,
@@ -4801,13 +4756,6 @@ let make_closed_row : datatype field_env -> row =
 
 let make_record_type ts = Record (make_closed_row ts)
 let make_variant_type ts = Variant (make_closed_row ts)
-
-let make_closed_row' : datatype field_env -> row = 
-        fun fields ->
-        Row ((FieldEnv.map (fun t -> Present t) fields), closed_row_var, false)
-
-
-let make_record_type' ts = Record(make_closed_row' ts)
 
 let make_table_type (t, r, w, n) = Table (t, r, w, n)
 

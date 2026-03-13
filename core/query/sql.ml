@@ -40,7 +40,7 @@ and from_clause =
 and base =
   | Case      of base * base * base
   | Constant  of Constant.t
-  | Project   of Var.var * string * bool
+  | Project   of Var.var * string
   | Apply     of string * base list
   | Aggr      of string * query
   | Empty     of query
@@ -328,7 +328,7 @@ class virtual printer =
           pp_fields fields
           Format.pp_print_string (fresh_dummy_var ())
           pr_b condition
-      | Select (mult, fields, tables, condition, gbys, os) -> 
+      | Select (mult, fields, tables, condition, gbys, os) ->
           self#pp_select ppf mult fields tables condition gbys os ignore_fields
       | Delete { del_table; del_where } ->
           self#pp_delete ppf del_table del_where
@@ -349,15 +349,6 @@ class virtual printer =
         Format.pp_print_string ppf (self#quote_field label)
       else
         Format.fprintf ppf "%s.%s" (string_of_table_var var) (self#quote_field label)
-
-  method pp_projection_nullable one_table ppf (var, label) =
-      let print_projection ppf () =
-              if one_table then
-                Format.pp_print_string ppf (self#quote_field label)
-              else
-                Format.fprintf ppf "%s.%s" (string_of_table_var var) (self#quote_field label)
-      in 
-        Format.fprintf ppf "CASE WHEN %s IS NULL THEN '_Nothing' ELSE CONCAT('_Just(', %a, ')' ) END" (self#quote_field label) print_projection ()
 
   method pp_base one_table ppf b =
     let pr_b_one_table = self#pp_base one_table in
@@ -402,12 +393,8 @@ class virtual printer =
             |> Format.fprintf ppf "'%s UTC' :: timestamp with time zone"
         | Constant c ->
             Format.pp_print_string ppf (Constant.to_string c)
-        | Project (var, label, nullable) ->
-                        let _ = Debug.print (string_of_int var) in
-                        if nullable then
-                                self#pp_projection_nullable one_table ppf (var, label)
-                        else
-                                self#pp_projection one_table ppf (var, label)
+        | Project (var, label) ->
+            self#pp_projection one_table ppf (var, label)
         | Apply (op, [l; r]) when Arithmetic.is op ->
             self#pp_sql_arithmetic ppf one_table (l, op, r)
               (* special case: not empty is translated to exists *)

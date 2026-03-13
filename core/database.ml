@@ -54,8 +54,7 @@ let get_variant_type t =
 
 
 
-let rec value_of_db_string (value:string) t =
-  let _ = Debug.print ("Right, in vdbs: " ^ value) in
+let rec value_of_db_string (value:string) t = 
   match TypeUtils.concrete_type t with
     | Types.Primitive Primitive.Bool ->
         (* HACK:
@@ -89,7 +88,7 @@ let rec value_of_db_string (value:string) t =
        else Value.box_float (float_of_string value)
     | Types.Primitive Primitive.DateTime ->
        Value.box_datetime (Timestamp.parse_db_string value)
-    | Types.Variant _ -> let _ = ("Here is the value, here it is: " ^ value) in
+    | Types.Variant _ ->
                         if (String.equal value "") then
                                 Value.box_variant "Nothing" (Value.box_string "")
                         else
@@ -136,7 +135,6 @@ let is_null name = (name = "null")
 
 let result_signature field_types result =
     let n = result#nfields in
-    let _ = Debug.print ("Number of fields: " ^ string_of_int n) in
     let rec rs i =
       if i >= n then
         [],true
@@ -151,7 +149,6 @@ let result_signature field_types result =
             null_query
           else if List.mem_assoc name field_types then
             let fields,null_query = rs (i+1) in
-            let _ = Debug.print ("Hmmm " ^ ( Types.string_of_datatype (List.assoc name field_types))) in
             (name, (List.assoc name field_types, i)) :: fields,
             null_query && is_null(name)
           else
@@ -171,8 +168,6 @@ let result_signature field_types result =
       match rs with
       | [] -> l
       | (name,(t,i))::rs' ->
-                      Debug.print ("in build record: " ^ (Types.string_of_datatype t) );
-                      Debug.print ("Also in build record: " ^ (row i));
       build rs' (((name),value_of_db_string (row i) t)::l)
     in build rs []
 
