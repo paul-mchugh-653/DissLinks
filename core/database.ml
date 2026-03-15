@@ -46,11 +46,11 @@ let get_variant_type t =
                                         begin
                                         match present_t with
                                           | Types.Present actual_t -> actual_t
-                                          | _ -> t
+                                          | _ -> assert false
                                         end
-                      | _ -> t
+                      | _ -> assert false
                    end
-    | _ -> t
+    | _ -> assert false
 
 
 

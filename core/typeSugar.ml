@@ -3307,6 +3307,7 @@ let rec type_check : context -> phrase -> phrase * Types.datatype * Usage.t =
                         |> Types.make_valid_time_data_type
                         |> Types.make_list_type in
                     unify ~handle:Gripers.sequenced_insert_values (pos_and_typ values, no_pos ty)
+                | _ ->    
                     unify ~handle:Gripers.insert_values
                       (pos_and_typ values,
                        no_pos (Types.make_list_type (T.Record (T.Row (field_env, Unionfind.fresh T.Closed, false)))))
