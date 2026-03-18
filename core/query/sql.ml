@@ -401,6 +401,9 @@ class virtual printer =
         | Apply ("==", [v; Null]) ->
             Format.fprintf ppf "(%a) IS NULL"
               pr_b_one_table v
+         | Apply ("==", [Null; w]) ->
+            Format.fprintf ppf "NULL IS (%a)"
+              pr_b_one_table w
         | Apply (op, [l; r]) when Arithmetic.is op ->
             self#pp_sql_arithmetic ppf one_table (l, op, r)
               (* special case: not empty is translated to exists *)
