@@ -6,7 +6,7 @@ fun main() {
 
 update (p <-- people)
 where (p.name == "Paul")
-set (age = Nothing())        
+set (age = Nothing)        
 
 }
 

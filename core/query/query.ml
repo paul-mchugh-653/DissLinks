@@ -508,6 +508,7 @@ struct
         reduce_if_condition (norm env c, norm env t, norm env e)
     | Q.Case (v, cases, default) ->
       let rec reduce_case (v, cases, default) =
+      let _ = Debug.print ("Thing: " ^ (Q.show v)) in
         match v with             
         | Q.Variant (label, v) as w ->
            begin

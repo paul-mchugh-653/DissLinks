@@ -7,10 +7,7 @@ fun main() {
 query{
 
 	for (p <-- people)
-	where (switch(p.age){
-		case Just(_) -> true
-		case Nothing(_) -> false	
-	})
+	where (p.age == Nothing)
 
 	[p]
 

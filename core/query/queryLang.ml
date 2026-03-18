@@ -178,7 +178,8 @@ let rec expression_of_base_value : Value.t -> t = function
         |> StringMap.from_alist in
       Record fields
   | `DateTime dt -> Constant (Constant.DateTime dt)
-  | `Variant ("Just", t) -> (expression_of_base_value t) 
+  | `Variant ("Just", t) -> (expression_of_base_value t)
+  | `Variant ("Nothing", _) -> Variant ("Nothing", Record StringMap.empty) 
   | other ->
       raise (internal_error ("expression_of_base_value undefined for " ^
         Value.string_of_value other))
@@ -785,7 +786,8 @@ and base : Sql.index -> t -> Sql.base = fun index ->
     | Primitive "index" ->
         (* This is the only place the index parameter is ever materially used. *)
         Sql.RowNumber index
-    | Variant ("Just", v) -> base index v
+    | Variant ("Just", v) -> base index v (* SQL null in Nothing branch, extend sql with Null and print, == Nothing turns to IS NULL *)
+    | Variant ("Nothing", _) -> Sql.Null
     | e ->
       Debug.print ("Not a base expression: " ^ show e);
       assert false

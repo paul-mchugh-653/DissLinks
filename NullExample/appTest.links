@@ -11,8 +11,8 @@ typename Model = (
     membersNull: Bool, 
     activeNull: Bool, 
     scoreNull: Bool,
-    filterGenre: String,
-    filterGenreNull: Bool,
+    filterArtistGenre: String,
+    filterArtistGenreNull: Bool,
     filterMembers: String,
     filterMembersNull: Bool,
     songNameNull: Bool,
@@ -21,6 +21,8 @@ typename Model = (
     songLyricsNull: Bool,
     filterRuntime: String,
     filterRuntimeNull: Bool,
+    filterSongGenre: String,
+    filterSongGenreNull: Bool,
     filterLyrics: Bool,
     filterLyricsNull: Bool,
     state: 
@@ -68,6 +70,8 @@ typename Message =
 | ArtistScoreNull: Bool
 | FilterArtistGenre: String
 | FilterArtistGenreNull: Bool
+| FilterSongGenre: String
+| FilterSongGenreNull: Bool
 | FilterArtistMembers: String
 | FilterArtistMembersNull: Bool
 | SongID: Int
@@ -121,27 +125,27 @@ fun unpack_artist(l){
     else {
         var genre = switch (hd(l).genre){
             case Just(x) -> x
-            case Nothing(_) -> "Defies genres"
+            case Nothing -> "Defies genres"
         };
 
         var members = switch (hd(l).members){
             case Just(x) -> intToString(x)
-            case Nothing(_) -> "Unknown"
+            case Nothing -> "Unknown"
         };
 
         var active = switch (hd(l).active){
             case Just(x) -> if (x) "true" else "false"
-            case Nothing(_) -> "Unconfirmed"
+            case Nothing -> "Unconfirmed"
         };
 
         var bool_active = switch (hd(l).active){
             case Just(x) -> x
-            case Nothing(_) -> false
+            case Nothing -> false
         };
 
         var score  = switch (hd(l).score){
             case Just(x) -> floatToString(x)
-            case Nothing(_) -> "Unscored"
+            case Nothing -> "Unscored"
         };
 
         div(style(widgetStyle) +@ onClick( fun() { SelectedArtist(hd(l).id, hd(l).name, genre, members, bool_active, score) } ),
@@ -170,27 +174,27 @@ fun unpack_song(l){
     else {
         var name = switch(hd(l).name){
             case Just(x) -> x
-            case Nothing(_) -> "Untitled"
+            case Nothing -> "Untitled"
         };
 
         var artist_id = switch(hd(l).artist_id){
             case Just(x) -> intToString(x)
-            case Nothing(_) -> "Unknown Artist"
+            case Nothing -> "Unknown Artist"
         };
 
         var runtime = switch(hd(l).runtime){
             case Just(x) -> floatToString(x)
-            case Nothing(_) -> "Unknown"
+            case Nothing -> "Unknown"
         };
 
         var lyrics = switch(hd(l).lyrics){
             case Just(x) -> if (x) "True" else "False"
-            case Nothing(_) -> "Unknown"
+            case Nothing -> "Unknown"
         };
 
         var bool_lyrics = switch(hd(l).lyrics){
             case Just(x) -> x
-            case Nothing(_) -> false
+            case Nothing -> false
         };
 
          div(style(widgetStyle) +@ onClick( fun() { SelectedSong(hd(l).id, name, artist_id, runtime, bool_lyrics) } ),
@@ -216,7 +220,7 @@ fun filter_artist(model){
     div(style(widgetStyle),
         h2(a0, textNode("Filter Artists")) +*
         div(a0,
-            (textNode("Genre: ") +* input(type("text") +@ value(model.filterGenre) +@ onKeyUp(fun(str) { FilterArtistGenre(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.filterGenreNull) +@ onClick(fun() { FilterArtistGenreNull(not(model.filterGenreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Genre: ") +* input(type("text") +@ value(model.filterArtistGenre) +@ onKeyUp(fun(str) { FilterArtistGenre(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.filterArtistGenreNull) +@ onClick(fun() { FilterArtistGenreNull(not(model.filterArtistGenreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +*
         div(a0,
             (textNode("Members: ") +* input(type("text") +@ value(model.filterMembers) +@ onKeyUp(fun(str) { FilterArtistMembers(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.filterMembersNull) +@ onClick(fun() { FilterArtistMembersNull(not(model.filterMembersNull)) }), MvuHTML.empty) +* textNode("(Set null)")
@@ -243,7 +247,7 @@ fun filter_song(model){
             (textNode("Lyrics: ") +*  input(type("checkbox") +@ checked(model.filterLyrics) +@ onClick(fun() { FilterSongLyrics(not(model.filterLyrics)) }), MvuHTML.empty)) +* input(type("checkbox") +@ checked(model.filterLyricsNull) +@ onClick(fun() { FilterSongLyricsNull(not(model.filterLyricsNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +*
         div(a0,
-            (textNode("Genre: ") +* input(type("text") +@ value(model.filterGenre) +@ onKeyUp(fun(str) { FilterArtistGenre(str) } ), MvuHTML.empty)) +* input(type("checkbox") +@ checked(model.filterGenreNull) +@ onClick(fun() { FilterArtistGenreNull(not(model.filterGenreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Genre: ") +* input(type("text") +@ value(model.filterSongGenre) +@ onKeyUp(fun(str) { FilterSongGenre(str) } ), MvuHTML.empty)) +* input(type("checkbox") +@ checked(model.filterSongGenreNull) +@ onClick(fun() { FilterSongGenreNull(not(model.filterSongGenreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         )
     ) +*
     div(a0,
@@ -321,16 +325,16 @@ fun expand_artist(model, result){
             textNode("Name: ") +* input(type("text") +@ value(model.selectedArtist.name) +@ onKeyUp(fun(str) { ArtistName(str) } ), MvuHTML.empty)
         ) +*
         div(a0,
-            (textNode("Genre: ") +* input(type("text") +@ value(model.selectedArtist.genre) +@ onKeyUp(fun(str) { ArtistGenre(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { ArtistGenreNull(not(model.genreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Genre: ") +* input(type("text") +@ value(model.selectedArtist.genre) +@ onKeyUp(fun(str) { ArtistGenre(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.genreNull) +@ onClick(fun() { ArtistGenreNull(not(model.genreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +* 
         div(a0,
-            (textNode("Members: ") +* input(type("text") +@ value(model.selectedArtist.members) +@ onKeyUp(fun(str) { ArtistMembers(str) } ), MvuHTML.empty)) +* input(type("checkbox") +@ onClick(fun() { ArtistMembersNull(not(model.membersNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Members: ") +* input(type("text") +@ value(model.selectedArtist.members) +@ onKeyUp(fun(str) { ArtistMembers(str) } ), MvuHTML.empty)) +* input(type("checkbox") +@ checked(model.membersNull) +@ onClick(fun() { ArtistMembersNull(not(model.membersNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +* 
         div(a0,
-            (textNode("Active: ") +* input(type("checkbox") +@ checked(model.selectedArtist.active) +@ onClick(fun() { ArtistActive(not(model.selectedArtist.active)) }), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { ArtistActiveNull(not(model.activeNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Active: ") +* input(type("checkbox") +@ checked(model.selectedArtist.active) +@ onClick(fun() { ArtistActive(not(model.selectedArtist.active)) }), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.activeNull) +@ onClick(fun() { ArtistActiveNull(not(model.activeNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +* 
         div(a0,
-            (textNode("Score: ") +* input(type("text") +@ value(model.selectedArtist.score) +@ onKeyUp(fun(str) { ArtistScore(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { ArtistScoreNull(not(model.scoreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Score: ") +* input(type("text") +@ value(model.selectedArtist.score) +@ onKeyUp(fun(str) { ArtistScore(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.scoreNull) +@ onClick(fun() { ArtistScoreNull(not(model.scoreNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         )
     ) +* 
     div(a0,
@@ -354,16 +358,16 @@ fun expand_song(model){
             textNode("ID: " ^^ intToString(model.selectedSong.id))
         ) +*
         div(a0,
-            (textNode("Name: ") +* input(type("text") +@ value(model.selectedSong.name) +@ onKeyUp(fun(str) { SongName(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { SongNameNull(not(model.songNameNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Name: ") +* input(type("text") +@ value(model.selectedSong.name) +@ onKeyUp(fun(str) { SongName(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.songNameNull) +@ onClick(fun() { SongNameNull(not(model.songNameNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +*
         div(a0,
-            (textNode("Artist ID: ") +* input(type("text") +@ value(model.selectedSong.artist_id) +@ onKeyUp(fun(str) { SongArtistID(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { SongArtistIDNull(not(model.songArtistIDNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Artist ID: ") +* input(type("text") +@ value(model.selectedSong.artist_id) +@ onKeyUp(fun(str) { SongArtistID(str) } ), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.songArtistIDNull) +@ onClick(fun() { SongArtistIDNull(not(model.songArtistIDNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +*
         div(a0,
-            (textNode("Runtime: ") +* input(type("text") +@ value(model.selectedSong.runtime) +@ onKeyUp(fun(str) { SongRuntime(str) } ), MvuHTML.empty)) +* input(type("checkbox") +@ onClick(fun() { SongRuntimeNull(not(model.songRuntimeNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Runtime: ") +* input(type("text") +@ value(model.selectedSong.runtime) +@ onKeyUp(fun(str) { SongRuntime(str) } ), MvuHTML.empty)) +* input(type("checkbox") +@ checked(model.songRuntimeNull) +@ onClick(fun() { SongRuntimeNull(not(model.songRuntimeNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) +*
         div(a0,
-            (textNode("Lyrics: ")  +* input(type("checkbox") +@ checked(model.selectedSong.lyrics) +@ onClick(fun() { SongLyrics(not(model.selectedSong.lyrics)) }), MvuHTML.empty)) +*  input(type("checkbox") +@ onClick(fun() { SongLyricsNull(not(model.songLyricsNull)) }), MvuHTML.empty) +* textNode("(Set null)")
+            (textNode("Lyrics: ")  +* input(type("checkbox") +@ checked(model.selectedSong.lyrics) +@ onClick(fun() { SongLyrics(not(model.selectedSong.lyrics)) }), MvuHTML.empty)) +*  input(type("checkbox") +@ checked(model.songLyricsNull) +@ onClick(fun() { SongLyricsNull(not(model.songLyricsNull)) }), MvuHTML.empty) +* textNode("(Set null)")
         ) 
     ) +*
     div(a0,
@@ -419,10 +423,10 @@ fun selectAllArtists() server {
 
 fun searchByGenre(model) server {
 
-    var genre = if (model.filterGenreNull)
-            Just("NULL")
+    var genre = if (model.filterArtistGenreNull)
+            Nothing
         else
-            Just(model.filterGenre); 
+            Just(model.filterArtistGenre); 
 
     query{
         for (a <-- artists)
@@ -435,7 +439,7 @@ fun searchByGenre(model) server {
 fun searchByMembers(model) server {
 
     var members = if (model.filterMembersNull)
-            Just(-1)
+            Nothing
         else
             Just(stringToInt(model.filterMembers)); 
 
@@ -449,13 +453,13 @@ fun searchByMembers(model) server {
 
 fun searchByGenreMembers(model) server {
 
-    var genre = if (model.filterGenreNull)
-            Just("NULL")
+    var genre = if (model.filterArtistGenreNull)
+            Nothing
         else
-            Just(model.filterGenre);
+            Just(model.filterArtistGenre);
 
     var members = if (model.filterMembersNull)
-            Just(0)
+            Nothing
         else
             Just(stringToInt(model.filterMembers));
 
@@ -487,7 +491,7 @@ fun selectAllSongs(model) server {
 fun searchByGreaterRuntime(model) server {
 
     var runtime = if (model.filterRuntimeNull)
-            Just(0.0)
+            Nothing
         else
             Just(stringToFloat(model.filterRuntime));
     query{
@@ -501,7 +505,7 @@ fun searchByGreaterRuntime(model) server {
 fun searchByLessRuntime(model) server {
 
     var runtime = if (model.filterRuntimeNull)
-            Just(0.0)
+            Nothing
         else
             Just(stringToFloat(model.filterRuntime));
     query{
@@ -514,7 +518,7 @@ fun searchByLessRuntime(model) server {
 fun searchByLyrics(model) server {
 
     var lyrics = if (model.filterLyricsNull)
-            Just(false)
+            Nothing
         else
             Just(model.filterLyrics);
 
@@ -528,15 +532,15 @@ fun searchByLyrics(model) server {
 
 fun searchSongByGenre(model) server {
 
-    var genre = if (model.filterGenreNull)
-            Just("NULL")
+    var genre = if (model.filterSongGenreNull)
+            Nothing
         else
-            Just(model.filterGenre);
+            Just(model.filterSongGenre);
 
     query{
         for(s <-- songs)
         for(a <-- artists)
-        where (Just(a.id) == s.artist_id && a.genre == Just(model.filterGenre))
+        where (Just(a.id) == s.artist_id && a.genre == genre)
             [s]
     }
 
@@ -561,22 +565,22 @@ sig insertArtist : (Model) ~%~> ()
 fun insertArtist(model) server {
 
     var genre = if (model.genreNull)
-            Just("NULL")
+            Nothing
         else
             Just(model.selectedArtist.genre);
 
     var members = if (model.membersNull)
-            Just(-1)
+            Nothing
         else
             Just(stringToInt(model.selectedArtist.members));
 
     var active = if (model.activeNull)
-            Just(false)
+            Nothing
         else
             Just(model.selectedArtist.active);
 
     var score = if (model.scoreNull)
-            Just(0.0)
+            Nothing
         else
             Just(stringToFloat(model.selectedArtist.score));
 
@@ -589,22 +593,22 @@ sig insertSong : (Model) ~%~> ()
 fun insertSong(model) server {
 
     var name = if (model.songNameNull)
-            Just("Untitiled")
+            Nothing
         else
             Just(model.selectedSong.name);
 
     var artist_id = if (model.songArtistIDNull)
-            Just(1)
+            Nothing
         else
             Just(stringToInt(model.selectedSong.artist_id));
 
     var runtime = if (model.songRuntimeNull)
-            Just(0.0)
+            Nothing
         else
             Just(stringToFloat(model.selectedSong.runtime));
 
     var lyrics = if (model.songLyricsNull)
-            Just(false)
+            Nothing
         else
             Just(model.selectedSong.lyrics);
 
@@ -617,22 +621,22 @@ sig updateArtist : (Model) ~%~> ()
 fun updateArtist(model) server {
 
     var genre = if (model.genreNull)
-            Just("NULL")
+            Nothing
         else
             Just(model.selectedArtist.genre);
 
     var members = if (model.membersNull)
-            Just(-1)
+            Nothing
         else
             Just(stringToInt(model.selectedArtist.members));
 
     var active = if (model.activeNull)
-            Just(false)
+            Nothing
         else
             Just(model.selectedArtist.active);
 
     var score = if (model.scoreNull)
-            Just(0.0)
+            Nothing
         else
             Just(stringToFloat(model.selectedArtist.score));
 
@@ -646,22 +650,22 @@ sig updateSong : (Model) ~%~> ()
 fun updateSong(model) server {
 
     var name = if (model.songNameNull)
-            Just("Untitiled")
+            Nothing
         else
             Just(model.selectedSong.name);
 
     var artist_id = if (model.songArtistIDNull)
-            Just(0)
+            Nothing
         else
             Just(stringToInt(model.selectedSong.artist_id));
 
     var runtime = if (model.songRuntimeNull)
-            Just(0.0)
+            Nothing
         else
             Just(stringToFloat(model.selectedSong.runtime));
 
     var lyrics = if (model.songLyricsNull)
-            Just(false)
+            Nothing
         else
             Just(model.selectedSong.lyrics);
 
@@ -738,8 +742,10 @@ fun updt(msg, model) {
         case ArtistActiveNull(an) -> ((model with activeNull = an), MvuCommands.empty)
         case ArtistScore(s) -> ((model with selectedArtist = (model.selectedArtist with score = s)), MvuCommands.empty)
         case ArtistScoreNull(sn) -> ((model with scoreNull = sn), MvuCommands.empty)
-        case FilterArtistGenre(g) -> ((model with filterGenre = g), MvuCommands.empty)
-        case FilterArtistGenreNull(n) -> ((model with filterGenreNull = n), MvuCommands.empty)
+        case FilterArtistGenre(g) -> ((model with filterArtistGenre = g), MvuCommands.empty)
+        case FilterArtistGenreNull(n) -> ((model with filterArtistGenreNull = n), MvuCommands.empty)
+        case FilterSongGenre(g) -> ((model with filterSongGenre = g), MvuCommands.empty)
+        case FilterSongGenreNull(n) -> ((model with filterSongGenreNull = n), MvuCommands.empty)
         case FilterArtistMembers(m) -> ((model with filterMembers = m), MvuCommands.empty)
         case FilterArtistMembersNull(n) -> ((model with filterMembersNull = n), MvuCommands.empty)
         case SongID(i) -> ((model with selectedSong = (model.selectedSong with id = i)), MvuCommands.empty)
@@ -767,7 +773,7 @@ fun updt(msg, model) {
 }
 
 fun mainPage() {
-    Mvu.runCmd("placeholder", (selectedSong = (id = 0, name = "", artist_id = "", runtime = "", lyrics = false), selectedArtist = (id = 0, name = "", genre = "", members = "", active = false, score = ""), filterGenre = "", filterMembers = "", filterRuntime = "", filterLyrics = false, genreNull = false, membersNull = false, activeNull = false, scoreNull = false, songNameNull = false, songArtistIDNull = false, songRuntimeNull = false, songLyricsNull = false, filterGenreNull = false, filterMembersNull = false, filterRuntimeNull = false, filterLyricsNull = false, state = NotStarted), view, updt, MvuCommands.empty);
+    Mvu.runCmd("placeholder", (selectedSong = (id = 0, name = "", artist_id = "", runtime = "", lyrics = false), selectedArtist = (id = 0, name = "", genre = "", members = "", active = false, score = ""), filterArtistGenre = "", filterSongGenre = "", filterMembers = "", filterRuntime = "", filterLyrics = false, genreNull = false, membersNull = false, activeNull = false, scoreNull = false, songNameNull = false, songArtistIDNull = false, songRuntimeNull = false, songLyricsNull = false, filterArtistGenreNull = false, filterSongGenreNull = false, filterMembersNull = false, filterRuntimeNull = false, filterLyricsNull = false, state = NotStarted), view, updt, MvuCommands.empty);
 
     page
         <html>

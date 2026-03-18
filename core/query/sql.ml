@@ -46,6 +46,7 @@ and base =
   | Empty     of query
   | Length    of query
   | RowNumber of (Var.var * string) list
+  | Null
 and multiplicity = All | Distinct
     [@@deriving show]
 and dependency = Standard | Lateral
@@ -393,8 +394,13 @@ class virtual printer =
             |> Format.fprintf ppf "'%s UTC' :: timestamp with time zone"
         | Constant c ->
             Format.pp_print_string ppf (Constant.to_string c)
+        | Null ->
+            Format.pp_print_string ppf "NULL"
         | Project (var, label) ->
             self#pp_projection one_table ppf (var, label)
+        | Apply ("==", [v; Null]) ->
+            Format.fprintf ppf "(%a) IS NULL"
+              pr_b_one_table v
         | Apply (op, [l; r]) when Arithmetic.is op ->
             self#pp_sql_arithmetic ppf one_table (l, op, r)
               (* special case: not empty is translated to exists *)
@@ -405,7 +411,7 @@ class virtual printer =
             Format.fprintf ppf "%s(%a)"
               (unary_map uop)
               pr_b_one_table v
-        | Apply (op, [v; w]) when StringSet.mem op binary_ops ->
+        | Apply (op, [v; w]) when StringSet.mem op binary_ops -> (* Add special case v == Nothing for IS NULL *)
             Format.fprintf ppf "(%a) %s (%a)"
               pr_b_one_table v
               (binary_map op)
